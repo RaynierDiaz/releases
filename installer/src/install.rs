@@ -72,6 +72,8 @@ pub fn install() {
 	
 	println!("Done.");
 	
+	prompt!("Install successful, press enter to close the installer");
+	
 }
 
 

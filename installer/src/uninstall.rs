@@ -39,7 +39,9 @@ pub fn uninstall() {
 		println!("Failed to delete addin files, usually located at C:\\ProgramData\\Autodesk\\Revit\\Addins\\___\\TupeloWorkbench.addin. Please contact Tupelo Workbench with this error message: {err:?}");
 	}
 	
-	println!("Done, uninstall complete");
+	println!("Done.");
+	
+	prompt!("Uninstall successful, press enter to close the installer");
 	
 }
 

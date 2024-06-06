@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<RevitAddIns>
+	<AddIn Type="Application">
+	    <Name>TupeloWorkbenchMainApp</Name>
+		<Assembly>EXTENSION_DIR\Frontend.dll</Assembly>
+		<AddInId>54757065-6C6F-2057-6F72-6B62656E6368</AddInId>
+		<FullClassName>TupeloWorkbenchExt.MainApp</FullClassName>
+		<VendorId>TupeloWorkbench</VendorId>
+		<VendorDescription>[blank]</VendorDescription>
+	</AddIn>
+</RevitAddIns>

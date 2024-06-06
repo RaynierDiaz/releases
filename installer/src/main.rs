@@ -33,10 +33,10 @@ struct Release {
 fn main() {
 	
 	let options = &[
-		OptionWithData {display_name: String::from("1: install / update"), data: 1usize},
-		OptionWithData {display_name: String::from("2: uninstall"), data: 2usize},
+		InputOption::new("install / update", Some("1"), 1),
+		InputOption::new("uninstall", Some("2"), 2),
 	];
-	match prompt!("What would you like to do? "; options).data {
+	match prompt!("What would you like to do? "; options).1.data {
 		1 => install::install(),
 		2 => uninstall::uninstall(),
 		_ => unreachable!(),
