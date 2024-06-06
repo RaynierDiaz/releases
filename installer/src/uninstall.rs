@@ -72,7 +72,7 @@ pub fn delete_extension_folder(revit_dir: &Path) -> Result<DidDeleteExtensionFol
 		.trim();
 	
 	let extension_path = PathBuf::from(&assembly_line.trim()[10..assembly_line.len()-23]);
-	let confirm = prompt!(format!("The detected extension path is \"{extension_path:?}\", does that sound right? "); [true] YesNoInput);
+	let confirm = prompt!(format!("The detected extension path is {extension_path:?}, does that sound right? "); [true] YesNoInput);
 	if !confirm {
 		println!("Affirmed, said path will not be deleted.");
 		return Ok(false);
