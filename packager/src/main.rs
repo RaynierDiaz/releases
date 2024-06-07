@@ -64,22 +64,22 @@ fn main() -> Result<()> {
 	// frontend dll
 	zip.start_file("Frontend.dll", options)?;
 	let frontend_file_contents = fs::read(PathBuf::from(settings::EXTENSION_DIR).join("C#Frontend/bin/release/net48/TupeloWorkbenchExt.dll"))?;
-	zip.write(&frontend_file_contents)?;
+	zip.write_all(&frontend_file_contents)?;
 	
 	// backend dll
 	zip.start_file("Backend.dll", options)?;
 	let backend_file_contents = fs::read(PathBuf::from(settings::EXTENSION_DIR).join("C#Backend/bin/release/net48/TupeloWorkbenchExt.dll"))?;
-	zip.write(&backend_file_contents)?;
+	zip.write_all(&backend_file_contents)?;
 	
 	// addin file
 	zip.start_file("TupeloWorkbench.addin", options)?;
 	let addin_file_contents = fs::read(releases_dir.join("assets/TupeloWorkbench.addin"))?;
-	zip.write(&addin_file_contents)?;
+	zip.write_all(&addin_file_contents)?;
 	
 	// readme file
 	zip.start_file("README.md", options)?;
 	let readme_file_contents = fs::read(releases_dir.join("assets/README.md"))?;
-	zip.write(&readme_file_contents)?;
+	zip.write_all(&readme_file_contents)?;
 	
 	zip.finish()?;
 	
