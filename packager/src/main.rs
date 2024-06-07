@@ -25,6 +25,10 @@ fn main() -> Result<()> {
 		}
 	}
 	
+	let confirm = prompt!("Checklist: do you have the latest version of the Workbench repo? "; YesNoInput);
+	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
+	let confirm = prompt!("Checklist: do you have the latest version of the Releases repo? "; YesNoInput);
+	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
 	let confirm = prompt!("Checklist: have you built the frontend in release mode? "; YesNoInput);
 	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
 	let confirm = prompt!("Checklist: have you built the backend in release mode? "; YesNoInput);
@@ -50,7 +54,7 @@ fn main() -> Result<()> {
 	fs::create_dir(releases_dir.join("output")).context("Failed to create output folder")?;
 	
 	// installer file
-	fs::copy(releases_dir.join("installer/target/debug/installer.exe"), releases_dir.join("output/installer.exe")).context("Failed to copy installer exe")?;
+	fs::copy(releases_dir.join("installer/target/release/installer.exe"), releases_dir.join("output/installer.exe")).context("Failed to copy installer exe")?;
 	
 	// assets.zip
 	let output_file = File::create(releases_dir.join("output/assets.zip")).context("Failed to create assets.zip file")?;
