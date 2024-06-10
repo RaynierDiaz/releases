@@ -1,11 +1,27 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--FORMAT_VERSION_2
+
+
+
+Tupelo Workbench Extension
+https://github.com/RaynierDiaz/releases
+
+Thank you for downloading our extension! This file is how Revit loads the extension, but
+changing the files manually is not recommended unless you really know what you're doing.
+
+To update / uninstall, please download the extension installer here:
+https://github.com/RaynierDiaz/releases/releases/latest
+
+
+
+-->
 <RevitAddIns>
 	<AddIn Type="Application">
-	    <Name>TupeloWorkbenchMainApp</Name>
+		<Name>TupeloWorkbenchMainApp</Name>
 		<Assembly>EXTENSION_DIR\Frontend.dll</Assembly>
 		<AddInId>54757065-6C6F-2057-6F72-6B62656E6368</AddInId>
 		<FullClassName>TupeloWorkbenchExt.MainApp</FullClassName>
 		<VendorId>TupeloWorkbench</VendorId>
-		<VendorDescription>[blank]</VendorDescription>
+		<VendorDescription>https://github.com/RaynierDiaz/releases</VendorDescription>
 	</AddIn>
 </RevitAddIns>

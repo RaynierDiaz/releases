@@ -21,6 +21,22 @@ pub fn install() {
 		}
 	}));
 	let revit_dir = PathBuf::from(revit_dir);
+	
+	match check_already_installed(&revit_dir) {
+		StdResult::Ok(true) => {
+			println!("Error: extension is already installed. Please uninstall before attempting to install / update.");
+			return;
+		}
+		StdResult::Ok(false) => {}
+		StdResult::Err(err) => {
+			let should_continue = prompt!(format!("Warning: failed to check if extension is already installed (error: {err}), do you want to continue with installation? "); YesNoInput);
+			if !should_continue {
+				prompt!("Affirmed, canceling install.");
+				return;
+			}
+		}
+	}
+	
 	let ext_dir = prompt!("Where would you like to install the extension? "; ["C:\\ProgramData\\TupeloWorkbenchExt"] SimpleValidate (|input| {
 		if PathBuf::from(input).to_str().is_some() {
 			StdResult::Ok(())
@@ -51,29 +67,42 @@ pub fn install() {
 		}
 	};
 	
-	let version = match get_version(&mut zip_data) {
+	let version = match get_format_version(&mut zip_data) {
 		StdResult::Ok(v) => v,
 		StdResult::Err(err) => {
-			println!("Failed to retrieve assets data, attempting to continue...  (error message: {err:?})");
-			settings::ASSETS_VERSION
+			println!("Failed to retrieve assets version, attempting to continue...  (error message: {err:?})");
+			settings::LATEST_ASSETS_VERSION
 		}
 	};
-	if version != settings::ASSETS_VERSION {
-		println!("Installer is out of date, please re-download installer to continue\nNOTE: we suggest uninstalling the extension before updating the installer");
+	if version != settings::LATEST_ASSETS_VERSION {
+		println!("Installer is out of date, please re-download installer to continue. If this is the latest version, please submit a bug report (https://github.com/{}/{}/issues).", settings::REPO_OWNER, settings::REPO_NAME);
 		return;
 	}
 	
-	if let Err(err) = write_dll_files(&mut zip_data, &ext_dir) {
-		println!("Failed to create dll files. Please contact Tupelo Workbench with this error message: {err:?}");
-	}
-	if let Err(err) = write_addin_files(&mut zip_data, &revit_dir, &ext_dir) {
-		println!("Failed to create addin files. Please contact Tupelo Workbench with this error message: {err:?}");
+	if let Err(err) = write_files(&mut zip_data, &revit_dir, &ext_dir) {
+		println!("Failed to write extension files. Please contact Tupelo Workbench with this error message: {err:?}");
 	}
 	
 	println!("Done.");
 	
 	prompt!("Install successful, press enter to close the installer");
 	
+}
+
+
+
+pub fn check_already_installed(revit_dir: &Path) -> Result<bool> {
+	let addins_folder = revit_dir.join("Addins");
+	for child in fs::read_dir(&addins_folder)? {
+		let StdResult::Ok(child) = child else {
+			println!("Warning: failed to read a child of {addins_folder:?}");
+			continue;
+		};
+		if child.path().join("TupeloWorkbench.addin").exists() {
+			return Ok(true)
+		}
+	}
+	Ok(false)
 }
 
 
@@ -86,7 +115,6 @@ pub fn download_assets() -> Result<Vec<u8>> {
 	let response = client
 		.get(api_url)
 		.header("User-Agent", "Mozilla/5.0")
-		// .header("Accept", "application/vnd.github+json")
 		.header("X-GitHub-Api-Version", "2022-11-28")
 		.send().context("Attempted to send api request")?
 		.text().context("Attempted to retrieve page text")?;
@@ -117,12 +145,14 @@ pub fn download_assets() -> Result<Vec<u8>> {
 
 
 
-pub fn get_version(zip_data: &mut ZipArchive<Cursor<Vec<u8>>>) -> Result<usize> {
-	let file_contents = get_file_text(zip_data, "README.md")?;
-	let first_line = file_contents.lines().next().ok_or_else(|| Error::msg("Could not prase the first line of README.md in assets."))?;
-	if !first_line.starts_with("#### VERSION_") {return Err(Error::msg("Could not prase the first line of README.md in assets."));}
-	let first_line = &first_line[13..];
-	first_line.parse::<usize>().map_err(Error::from)
+pub fn get_format_version(zip_data: &mut ZipArchive<Cursor<Vec<u8>>>) -> Result<usize> {
+	let file_contents = get_file_text(zip_data, "TupeloWorkbench.addin")?;
+	let format_line =
+		file_contents.lines()
+		.find(|line| line.starts_with("<!--FORMAT_VERSION_"))
+		.ok_or_else(|| Error::msg(format!("Could find format version in asset files, you may need to re-download the installer. If this is the latest version, please submit a bug report (https://github.com/{}/{}/issues).", settings::REPO_OWNER, settings::REPO_NAME)))?;
+	let format_num = &format_line[19..];
+	format_num.parse::<usize>().map_err(Error::from)
 }
 
 
@@ -143,8 +173,9 @@ pub fn get_file_bytes(zip_data: &mut ZipArchive<Cursor<Vec<u8>>>, file_name: &'s
 
 
 
-pub fn write_dll_files(zip_data: &mut ZipArchive<Cursor<Vec<u8>>>, ext_dir: &Path) -> Result<()> {
+pub fn write_files(zip_data: &mut ZipArchive<Cursor<Vec<u8>>>, revit_dir: &Path, ext_dir: &Path) -> Result<()> {
 	
+	// dlls
 	fs::create_dir_all(ext_dir).context(format!("Attempted to create folders at {ext_dir:?}"))?;
 	let frontend_dll_data = get_file_bytes(zip_data, "Frontend.dll")?;
 	let backend_dll_data = get_file_bytes(zip_data, "Backend.dll")?;
@@ -154,12 +185,12 @@ pub fn write_dll_files(zip_data: &mut ZipArchive<Cursor<Vec<u8>>>, ext_dir: &Pat
 	let backend_dll_path = ext_dir.join("Backend.dll");
 	fs::write(&backend_dll_path, backend_dll_data).context(format!("Attempted to write file {backend_dll_path:?}"))?;
 	
-	Ok(())
-}
-
-
-
-pub fn write_addin_files(zip_data: &mut ZipArchive<Cursor<Vec<u8>>>, revit_dir: &Path, ext_dir: &Path) -> Result<()> {
+	// readme
+	let readme_file_contents = get_file_text(zip_data, "readme.txt")?;
+	let readme_path = ext_dir.join("readme.txt");
+	fs::write(&readme_path, readme_file_contents).context(format!("Attempted to write file {readme_path:?}"))?;
+	
+	// .addin
 	let addins_folder = revit_dir.join("Addins");
 	let addin_file_contents = get_file_text(zip_data, "TupeloWorkbench.addin")?;
 	let addin_file_contents = addin_file_contents.replace("EXTENSION_DIR", ext_dir.to_str().unwrap());

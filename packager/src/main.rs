@@ -77,8 +77,8 @@ fn main() -> Result<()> {
 	zip.write_all(&addin_file_contents)?;
 	
 	// readme file
-	zip.start_file("README.md", options)?;
-	let readme_file_contents = fs::read(releases_dir.join("assets/README.md"))?;
+	zip.start_file("readme.txt", options)?;
+	let readme_file_contents = fs::read(releases_dir.join("assets/readme.txt"))?;
 	zip.write_all(&readme_file_contents)?;
 	
 	zip.finish()?;

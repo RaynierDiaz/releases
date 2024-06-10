@@ -2,7 +2,7 @@ pub mod settings {
 	pub const REPO_OWNER: &str = "RaynierDiaz";
 	pub const REPO_NAME: &str = "releases";
 	pub const ASSETS_NAME: &str = "Assets.zip";
-	pub const ASSETS_VERSION: usize = 1;
+	pub const LATEST_ASSETS_VERSION: usize = 2;
 }
 
 
@@ -14,6 +14,7 @@ use smart_read::prelude::*;
 
 pub mod install;
 pub mod uninstall;
+pub mod uninstallers;
 
 
 
@@ -33,8 +34,8 @@ struct Release {
 fn main() {
 	
 	let options = &[
-		InputOption::new("install / update", Some("1"), 1),
-		InputOption::new("uninstall", Some("2"), 2),
+		InputOption::new("install / update", vec!("1"), 1),
+		InputOption::new("uninstall", vec!("2"), 2),
 	];
 	match prompt!("What would you like to do? "; options).1.data {
 		1 => install::install(),
