@@ -24,14 +24,14 @@ pub fn install() {
 	
 	match check_already_installed(&revit_dir) {
 		StdResult::Ok(true) => {
-			println!("Error: extension is already installed. Please uninstall before attempting to install / update.");
+			prompt!("Error: extension is already installed. Please uninstall before attempting to install / update. ");
 			return;
 		}
 		StdResult::Ok(false) => {}
 		StdResult::Err(err) => {
 			let should_continue = prompt!(format!("Warning: failed to check if extension is already installed (error: {err}), do you want to continue with installation? "); YesNoInput);
 			if !should_continue {
-				prompt!("Affirmed, canceling install.");
+				prompt!("Affirmed, canceling install. ");
 				return;
 			}
 		}
@@ -50,7 +50,7 @@ pub fn install() {
 	let assets = match download_assets() {
 		StdResult::Ok(v) => v,
 		StdResult::Err(err) => {
-			println!("Failed to download assets from GitHub. Please contact Tupelo Workbench with this error message: {err:?}");
+			prompt!(format!("Failed to download assets from GitHub. Please contact Tupelo Workbench with this error message: {err:?} "));
 			return;
 		}
 	};
@@ -62,7 +62,7 @@ pub fn install() {
 	let mut zip_data = match ZipArchive::new(zip_cursor) {
 		StdResult::Ok(v) => v,
 		StdResult::Err(err) => {
-			println!("Failed to parse downloaded assets. Please contact Tupelo Workbench with this error message: {err:?}");
+			prompt!(format!("Failed to parse downloaded assets. Please contact Tupelo Workbench with this error message: {err:?} "));
 			return;
 		}
 	};
@@ -70,17 +70,17 @@ pub fn install() {
 	let version = match get_format_version(&mut zip_data) {
 		StdResult::Ok(v) => v,
 		StdResult::Err(err) => {
-			println!("Failed to retrieve assets version, attempting to continue...  (error message: {err:?})");
+			prompt!(format!("Failed to retrieve assets version, attempting to continue...  (error message: {err:?}) "));
 			settings::LATEST_ASSETS_VERSION
 		}
 	};
 	if version != settings::LATEST_ASSETS_VERSION {
-		println!("Installer is out of date, please re-download installer to continue. If this is the latest version, please submit a bug report (https://github.com/{}/{}/issues).", settings::REPO_OWNER, settings::REPO_NAME);
+		prompt!(format!("Installer is out of date, please re-download installer to continue. If this is the latest version, please submit a bug report (https://github.com/{}/{}/issues). ", settings::REPO_OWNER, settings::REPO_NAME));
 		return;
 	}
 	
 	if let Err(err) = write_files(&mut zip_data, &revit_dir, &ext_dir) {
-		println!("Failed to write extension files. Please contact Tupelo Workbench with this error message: {err:?}");
+		prompt!(format!("Failed to write extension files. Please contact Tupelo Workbench with this error message: {err:?} "));
 	}
 	
 	println!("Done.");

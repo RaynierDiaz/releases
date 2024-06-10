@@ -11,20 +11,21 @@ pub fn uninstall(revit_dir: PathBuf) -> Result<()> {
 	let did_delete_extension_folder = match delete_extension_folder(&revit_dir) {
 		StdResult::Ok(v) => v,
 		StdResult::Err(err) => {
-			println!("Failed to delete extension folder, usually located at C:\\ProgramData\\TupeloWorkbenchExt. Please contact Tupelo Workbench with this error message: {err:?}.");
+			prompt!(format!("Failed to delete extension folder, usually located at C:\\ProgramData\\TupeloWorkbenchExt. Please contact Tupelo Workbench with this error message: {err:?}. "));
 			return Ok(());
 		}
 	};
 	if !did_delete_extension_folder {
 		let exit = prompt!("The extension folder was not deleted, would you like to cancel the uninstall? "; [true] YesNoInput);
 		if exit {
-			println!("Affirmed, canceling uninstall.");
+			prompt!("Affirmed, canceling uninstall. ");
 			return Ok(());
 		}
 		println!("Affirmed, continuing uninstall...");
 	}
 	if let Err(err) = delete_addin_files(&revit_dir) {
-		println!("Failed to delete addin files, usually located at C:\\ProgramData\\Autodesk\\Revit\\Addins\\___\\TupeloWorkbench.addin. Please contact Tupelo Workbench with this error message: {err:?}");
+		prompt!(format!("Failed to delete addin files, usually located at C:\\ProgramData\\Autodesk\\Revit\\Addins\\___\\TupeloWorkbench.addin. Please contact Tupelo Workbench with this error message: {err:?} "));
+		return Ok(());
 	}
 	
 	println!("Done.");

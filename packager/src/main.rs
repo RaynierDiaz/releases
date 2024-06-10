@@ -54,10 +54,10 @@ fn main() -> Result<()> {
 	fs::create_dir(releases_dir.join("output")).context("Failed to create output folder")?;
 	
 	// installer file
-	fs::copy(releases_dir.join("installer/target/release/installer.exe"), releases_dir.join("output/installer.exe")).context("Failed to copy installer exe")?;
+	fs::copy(releases_dir.join("installer/target/release/installer.exe"), releases_dir.join("output/Installer.exe")).context("Failed to copy installer exe")?;
 	
 	// assets.zip
-	let output_file = File::create(releases_dir.join("output/assets.zip")).context("Failed to create assets.zip file")?;
+	let output_file = File::create(releases_dir.join("output/Assets.zip")).context("Failed to create assets.zip file")?;
 	let mut zip = ZipWriter::new(output_file);
 	let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
 	
