@@ -34,12 +34,14 @@ struct Release {
 fn main() {
 	
 	let options = &[
-		InputOption::new("install / update", vec!("1"), 1),
-		InputOption::new("uninstall", vec!("2"), 2),
+		InputOption::new("install / update (uses latest version)", vec!("1"), 1),
+		InputOption::new("offline install", vec!("2"), 2),
+		InputOption::new("uninstall", vec!("3"), 3),
 	];
 	match prompt!("What would you like to do? "; options).1.data {
-		1 => install::install(),
-		2 => uninstall::uninstall(),
+		1 => install::install(false),
+		2 => install::install(true),
+		3 => uninstall::uninstall(),
 		_ => unreachable!(),
 	}
 	

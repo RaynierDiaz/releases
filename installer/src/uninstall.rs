@@ -22,7 +22,7 @@ pub fn uninstall() {
 	let format_version = match get_format_version(&revit_dir) {
 		StdResult::Ok(v) => v,
 		StdResult::Err(err) => {
-			prompt!(format!("Error while uninstalling, please contact Tupelo Workbench with this message: {err} "));
+			prompt!(format!("Error while uninstalling, please contact Tupelo Workbench with this message: {err:?} "));
 			return;
 		}
 	};
@@ -33,7 +33,7 @@ pub fn uninstall() {
 		_ => Err(Error::msg("Unknown format version: {format_version}")),
 	};
 	if let Err(err) = result {
-		prompt!(format!("Error while uninstalling, please contact Tupelo Workbench with this message: {err} "));
+		prompt!(format!("Error while uninstalling, please contact Tupelo Workbench with this message: {err:?} "));
 		return;
 	}
 	

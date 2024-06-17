@@ -36,25 +36,13 @@ fn main() -> Result<()> {
 	let confirm = prompt!("Checklist: have you tested the release extension? "; YesNoInput);
 	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
 	
-	println!("Starting packaging, building installer...");
-	let result = Command::new("cargo")
-		.current_dir(releases_dir.join("installer"))
-		.arg("build")
-		.arg("--release")
-		.status()
-		.context("Failed to build installer")?;
-	if !result.success() {println!("Failed to build installer, canceling package"); return Ok(());}
-	
-	println!("Done, creating output files...");
-	
 	let output_dir = releases_dir.join("output");
 	if output_dir.exists() {
 		fs::remove_dir_all(output_dir).context("Failed to delete output folder")?;
 	}
 	fs::create_dir(releases_dir.join("output")).context("Failed to create output folder")?;
 	
-	// installer file
-	fs::copy(releases_dir.join("installer/target/release/installer.exe"), releases_dir.join("output/Installer.exe")).context("Failed to copy installer exe")?;
+	println!("Starting packaging, creating Assets.zip...");
 	
 	// assets.zip
 	let output_file = File::create(releases_dir.join("output/Assets.zip")).context("Failed to create assets.zip file")?;
@@ -82,6 +70,24 @@ fn main() -> Result<()> {
 	zip.write_all(&readme_file_contents)?;
 	
 	zip.finish()?;
+	
+	println!("Done. Building installer...");
+	
+	// installer's Assets copy
+	fs::copy(releases_dir.join("output/Assets.zip"), releases_dir.join("installer/src/Assets.zip")).context("Failed to copy Assets.zip from output to installer/src")?;
+	
+	let result = Command::new("cargo")
+		.current_dir(releases_dir.join("installer"))
+		.arg("build")
+		.arg("--release")
+		.status()
+		.context("Failed to run `cargo build --release` on installer")?;
+	if !result.success() {println!("Failed to build installer, canceling package"); return Ok(());}
+	
+	// installer file
+	fs::copy(releases_dir.join("installer/target/release/installer.exe"), releases_dir.join("output/Installer.exe")).context("Failed to copy installer exe")?;
+	
+	println!("Done.");
 	
 	prompt!("Finished packaging extension. Files to release are in /output, press enter to exit ");
 	

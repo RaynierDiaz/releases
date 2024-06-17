@@ -10,7 +10,7 @@ use crate::*;
 
 
 
-pub fn install() {
+pub fn install(is_offline: bool) {
 	
 	let revit_dir = prompt!("Where is Revit located? "; ["C:\\ProgramData\\Autodesk\\Revit"] SimpleValidate (|input| {
 		println!("Testing: '{input}'");
@@ -29,7 +29,7 @@ pub fn install() {
 		}
 		StdResult::Ok(false) => {}
 		StdResult::Err(err) => {
-			let should_continue = prompt!(format!("Warning: failed to check if extension is already installed (error: {err}), do you want to continue with installation? "); YesNoInput);
+			let should_continue = prompt!(format!("Warning: failed to check if extension is already installed (error: {err:?}), do you want to continue with installation? "); YesNoInput);
 			if !should_continue {
 				prompt!("Affirmed, canceling install. ");
 				return;
@@ -46,15 +46,24 @@ pub fn install() {
 	}));
 	let ext_dir = PathBuf::from(ext_dir);
 	
-	println!("Downloading assets...");
-	let assets = match download_assets() {
-		StdResult::Ok(v) => v,
-		StdResult::Err(err) => {
-			prompt!(format!("Failed to download assets from GitHub. Please contact Tupelo Workbench with this error message: {err:?} "));
-			return;
-		}
+	#[allow(unused_assignments)]
+	let mut assets_owned = vec!();
+	let assets = if is_offline {
+		const ASSETS_DATA: &[u8] = include_bytes!("Assets.zip");
+		ASSETS_DATA
+	} else {
+		println!("Downloading assets...");
+		let assets = match download_assets() {
+			StdResult::Ok(v) => v,
+			StdResult::Err(err) => {
+				prompt!(format!("Failed to download assets from GitHub. Please contact Tupelo Workbench with this error message: {err:?} "));
+				return;
+			}
+		};
+		println!("Done.");
+		assets_owned = assets;
+		&assets_owned
 	};
-	println!("Done.");
 	
 	println!("Installing...");
 	
@@ -145,7 +154,7 @@ pub fn download_assets() -> Result<Vec<u8>> {
 
 
 
-pub fn get_format_version(zip_data: &mut ZipArchive<Cursor<Vec<u8>>>) -> Result<usize> {
+pub fn get_format_version(zip_data: &mut ZipArchive<Cursor<&[u8]>>) -> Result<usize> {
 	let file_contents = get_file_text(zip_data, "TupeloWorkbench.addin")?;
 	let format_line =
 		file_contents.lines()
@@ -157,14 +166,14 @@ pub fn get_format_version(zip_data: &mut ZipArchive<Cursor<Vec<u8>>>) -> Result<
 
 
 
-pub fn get_file_text(zip_data: &mut ZipArchive<Cursor<Vec<u8>>>, file_name: &'static str) -> Result<String> {
+pub fn get_file_text(zip_data: &mut ZipArchive<Cursor<&[u8]>>, file_name: &'static str) -> Result<String> {
 	let mut zip_file = zip_data.by_name(file_name).context(format!("Attempted to find file {file_name:?}"))?;
 	let mut contents = String::with_capacity(zip_file.size() as usize);
 	zip_file.read_to_string(&mut contents).context(format!("Attempted to read asset file {file_name:?}"))?;
 	Ok(contents)
 }
 
-pub fn get_file_bytes(zip_data: &mut ZipArchive<Cursor<Vec<u8>>>, file_name: &'static str) -> Result<Vec<u8>> {
+pub fn get_file_bytes(zip_data: &mut ZipArchive<Cursor<&[u8]>>, file_name: &'static str) -> Result<Vec<u8>> {
 	let mut zip_file = zip_data.by_name(file_name).context(format!("Attempted to find file {file_name:?}"))?;
 	let mut contents = Vec::with_capacity(zip_file.size() as usize);
 	zip_file.read_to_end(&mut contents).context(format!("Attempted to read asset file {file_name:?}"))?;
@@ -173,7 +182,7 @@ pub fn get_file_bytes(zip_data: &mut ZipArchive<Cursor<Vec<u8>>>, file_name: &'s
 
 
 
-pub fn write_files(zip_data: &mut ZipArchive<Cursor<Vec<u8>>>, revit_dir: &Path, ext_dir: &Path) -> Result<()> {
+pub fn write_files(zip_data: &mut ZipArchive<Cursor<&[u8]>>, revit_dir: &Path, ext_dir: &Path) -> Result<()> {
 	
 	// dlls
 	fs::create_dir_all(ext_dir).context(format!("Attempted to create folders at {ext_dir:?}"))?;
