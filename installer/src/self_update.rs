@@ -32,10 +32,12 @@ pub fn self_update() {
 		return;
 	};
 	
+	println!("Done. Running new installer...");
+	
 	// run new installer
 	let output = Command::new(new_installer_path)
         .arg("--auto-install")
-        .output();
+		.spawn();
 	if let Err(err) = output {
 		prompt!(format!("Failed to run new installer. Please contact Tupelo Workbench with this error message: {err:?} "));
 		return;

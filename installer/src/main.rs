@@ -2,7 +2,7 @@ pub mod settings {
 	pub const REPO_OWNER: &str = "RaynierDiaz";
 	pub const REPO_NAME: &str = "releases";
 	pub const ASSETS_NAME: &str = "Assets.zip";
-	pub const INSTALLER_NAME: &str = "installer.exe";
+	pub const INSTALLER_NAME: &str = "Installer.exe";
 	pub const LATEST_ASSETS_VERSION: usize = 2;
 }
 
@@ -44,8 +44,11 @@ fn main() {
 			self_update::self_update();
 			return;
 		}
-		Some("--auto_install") => {
+		Some("--auto-install") => {
 			install::install(false);
+			if let Err(err) = self_replace::self_delete() {
+				prompt!(format!("Failed to delete temporary installer. Please contact Tupelo Workbench with this error message: {err:?} "));
+			}
 			return;
 		}
 		_ => {}
