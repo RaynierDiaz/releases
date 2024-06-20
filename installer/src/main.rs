@@ -13,6 +13,7 @@ use smart_read::prelude::*;
 
 
 pub mod install;
+pub mod self_update;
 pub mod uninstall;
 pub mod uninstallers;
 
@@ -33,15 +34,23 @@ struct Release {
 
 fn main() {
 	
+	let mut args = std::env::args();
+	args.next();
+	let first_arg = args.next();
+	if first_arg.as_deref() == Some("--self-update") {
+		self_update::self_update();
+		return;
+	}
+	
 	let options = &[
 		InputOption::new("install / update (uses latest version)", vec!("1"), 1),
 		InputOption::new("offline install", vec!("2"), 2),
 		InputOption::new("uninstall", vec!("3"), 3),
 	];
 	match prompt!("What would you like to do? "; options).1.data {
-		1 => install::install(false),
-		2 => install::install(true),
-		3 => uninstall::uninstall(),
+		1 => {let _ = install::install(false);},
+		2 => {let _ = install::install(true);},
+		3 => {let _ = uninstall::uninstall(false);},
 		_ => unreachable!(),
 	}
 	

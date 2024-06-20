@@ -10,8 +10,11 @@ use crate::*;
 
 
 
-pub fn install(is_offline: bool) {
+pub type InstallSucceeded = bool;
+
+pub fn install(is_offline: bool) -> InstallSucceeded {
 	
+	// get revit dir
 	let revit_dir = prompt!("Where is Revit located? "; ["C:\\ProgramData\\Autodesk\\Revit"] SimpleValidate (|input| {
 		println!("Testing: '{input}'");
 		if PathBuf::from(input).exists() {
@@ -22,21 +25,23 @@ pub fn install(is_offline: bool) {
 	}));
 	let revit_dir = PathBuf::from(revit_dir);
 	
+	// check if already installed
 	match check_already_installed(&revit_dir) {
 		StdResult::Ok(true) => {
 			prompt!("Error: extension is already installed. Please uninstall before attempting to install / update. ");
-			return;
+			return false;
 		}
 		StdResult::Ok(false) => {}
 		StdResult::Err(err) => {
 			let should_continue = prompt!(format!("Warning: failed to check if extension is already installed (error: {err:?}), do you want to continue with installation? "); YesNoInput);
 			if !should_continue {
 				prompt!("Affirmed, canceling install. ");
-				return;
+				return false;
 			}
 		}
 	}
 	
+	// get install dir
 	let ext_dir = prompt!("Where would you like to install the extension? "; ["C:\\ProgramData\\TupeloWorkbenchExt"] SimpleValidate (|input| {
 		if PathBuf::from(input).to_str().is_some() {
 			StdResult::Ok(())
@@ -46,6 +51,7 @@ pub fn install(is_offline: bool) {
 	}));
 	let ext_dir = PathBuf::from(ext_dir);
 	
+	// get / download assets
 	#[allow(unused_assignments)]
 	let mut assets_owned = vec!();
 	let assets = if is_offline {
@@ -57,7 +63,7 @@ pub fn install(is_offline: bool) {
 			StdResult::Ok(v) => v,
 			StdResult::Err(err) => {
 				prompt!(format!("Failed to download assets from GitHub. Please contact Tupelo Workbench with this error message: {err:?} "));
-				return;
+				return false;
 			}
 		};
 		println!("Done.");
@@ -72,7 +78,7 @@ pub fn install(is_offline: bool) {
 		StdResult::Ok(v) => v,
 		StdResult::Err(err) => {
 			prompt!(format!("Failed to parse downloaded assets. Please contact Tupelo Workbench with this error message: {err:?} "));
-			return;
+			return false;
 		}
 	};
 	
@@ -85,17 +91,34 @@ pub fn install(is_offline: bool) {
 	};
 	if version != settings::LATEST_ASSETS_VERSION {
 		prompt!(format!("Installer is out of date, please re-download installer to continue. If this is the latest version, please submit a bug report (https://github.com/{}/{}/issues). ", settings::REPO_OWNER, settings::REPO_NAME));
-		return;
+		return false;
 	}
 	
 	if let Err(err) = write_files(&mut zip_data, &revit_dir, &ext_dir) {
 		prompt!(format!("Failed to write extension files. Please contact Tupelo Workbench with this error message: {err:?} "));
+		return false;
+	}
+	
+	let installer_path = match std::env::current_exe().context("Attempted to get path of current exe") {
+		StdResult::Ok(v) => v,
+		StdResult::Err(err) => {
+			prompt!(format!("Failed to get path of installer. Please contact Tupelo Workbench with this error message: {err:?} "));
+			return false;
+		}
+	};
+	match fs::copy(installer_path, ext_dir.join("installer.exe")).context("Attempted to copy installer to extension folder") {
+		StdResult::Ok(_) => {}
+		StdResult::Err(err) => {
+			prompt!(format!("Failed to copy installer into extension folder. Please contact Tupelo Workbench with this error message: {err:?} "));
+			return false;
+		}
 	}
 	
 	println!("Done.");
 	
 	prompt!("Install successful, press enter to close the installer");
 	
+	true
 }
 
 
