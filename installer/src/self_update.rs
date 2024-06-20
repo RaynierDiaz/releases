@@ -34,11 +34,14 @@ pub fn self_update() {
 	
 	println!("Done. Running new installer...");
 	
-	// run new installer
-	let output = Command::new(new_installer_path)
-        .arg("--auto-install")
-		.spawn();
-	if let Err(err) = output {
+	let child = Command::new("cmd")
+        .arg("/C")
+        .arg("start")
+        .arg("powershell")
+        .arg("-Command")
+        .arg(format!("& '{}' --auto-install", new_installer_path.to_str().expect("Attempted to parse path into string")))
+        .spawn();
+	if let Err(err) = child {
 		prompt!(format!("Failed to run new installer. Please contact Tupelo Workbench with this error message: {err:?} "));
 		return;
 	}
