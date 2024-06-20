@@ -2,6 +2,7 @@ pub mod settings {
 	pub const REPO_OWNER: &str = "RaynierDiaz";
 	pub const REPO_NAME: &str = "releases";
 	pub const ASSETS_NAME: &str = "Assets.zip";
+	pub const INSTALLER_NAME: &str = "installer.exe";
 	pub const LATEST_ASSETS_VERSION: usize = 2;
 }
 
@@ -37,9 +38,17 @@ fn main() {
 	let mut args = std::env::args();
 	args.next();
 	let first_arg = args.next();
-	if first_arg.as_deref() == Some("--self-update") {
-		self_update::self_update();
-		return;
+	
+	match first_arg.as_deref() {
+		Some("--self-update") => {
+			self_update::self_update();
+			return;
+		}
+		Some("--auto_install") => {
+			install::install(false);
+			return;
+		}
+		_ => {}
 	}
 	
 	let options = &[

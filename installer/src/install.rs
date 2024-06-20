@@ -166,9 +166,9 @@ pub fn download_assets() -> Result<Vec<u8>> {
 	}
 	
 	// extract raw data
-	let len = response.content_length().ok_or_else(|| 
-		Error::msg("Could not get length of received assets data.")
-	)?;
+	let Some(len) = response.content_length() else {
+		return Err(Error::msg("Could not get length of received assets data."));
+	};
 	let mut buffer = Vec::with_capacity(len as usize);
 	response.read_to_end(&mut buffer).context("Attempted to read asset data")?;
 	
