@@ -7,9 +7,9 @@ use crate::uninstall::UninstallSucceeded;
 
 
 
-pub fn uninstall(revit_dir: PathBuf) -> Result<UninstallSucceeded> {
+pub fn uninstall(revit_dir: &Path) -> Result<UninstallSucceeded> {
 	
-	let did_delete_extension_folder = match delete_extension_folder(&revit_dir) {
+	let did_delete_extension_folder = match delete_extension_folder(revit_dir) {
 		StdResult::Ok(v) => v,
 		StdResult::Err(err) => {
 			prompt!(format!("Failed to delete extension folder, usually located at C:\\ProgramData\\TupeloWorkbenchExt. Please contact Tupelo Workbench with this error message: {err:?}. "));
@@ -24,7 +24,7 @@ pub fn uninstall(revit_dir: PathBuf) -> Result<UninstallSucceeded> {
 		}
 		println!("Affirmed, continuing uninstall...");
 	}
-	if let Err(err) = delete_addin_files(&revit_dir) {
+	if let Err(err) = delete_addin_files(revit_dir) {
 		prompt!(format!("Failed to delete addin files, usually located at C:\\ProgramData\\Autodesk\\Revit\\Addins\\___\\TupeloWorkbench.addin. Please contact Tupelo Workbench with this error message: {err:?} "));
 		return Ok(false);
 	}

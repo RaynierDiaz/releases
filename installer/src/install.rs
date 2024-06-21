@@ -12,18 +12,20 @@ use crate::*;
 
 pub type InstallSucceeded = bool;
 
-pub fn install(is_offline: bool) -> InstallSucceeded {
+pub fn install(is_offline: bool, revit_dir: Option<PathBuf>) -> InstallSucceeded {
 	
 	// get revit dir
-	let revit_dir = prompt!("Where is Revit located? "; ["C:\\ProgramData\\Autodesk\\Revit"] SimpleValidate (|input| {
-		println!("Testing: '{input}'");
-		if PathBuf::from(input).exists() {
-			StdResult::Ok(())
-		} else {
-			StdResult::Err(String::from("That path does not exist"))
-		}
-	}));
-	let revit_dir = PathBuf::from(revit_dir);
+	let revit_dir = revit_dir.unwrap_or_else(|| {
+		let revit_dir_string = prompt!("Where is Revit located? "; ["C:\\ProgramData\\Autodesk\\Revit"] SimpleValidate (|input| {
+			println!("Testing: '{input}'");
+			if PathBuf::from(input).exists() {
+				StdResult::Ok(())
+			} else {
+				StdResult::Err(String::from("That path does not exist"))
+			}
+		}));
+		PathBuf::from(revit_dir_string)
+	});
 	
 	// check if already installed
 	match check_already_installed(&revit_dir) {
@@ -97,21 +99,6 @@ pub fn install(is_offline: bool) -> InstallSucceeded {
 	if let Err(err) = write_files(&mut zip_data, &revit_dir, &ext_dir) {
 		prompt!(format!("Failed to write extension files. Please contact Tupelo Workbench with this error message: {err:?} "));
 		return false;
-	}
-	
-	let installer_path = match std::env::current_exe().context("Attempted to get path of current exe") {
-		StdResult::Ok(v) => v,
-		StdResult::Err(err) => {
-			prompt!(format!("Failed to get path of installer. Please contact Tupelo Workbench with this error message: {err:?} "));
-			return false;
-		}
-	};
-	match fs::copy(installer_path, ext_dir.join("installer.exe")).context("Attempted to copy installer to extension folder") {
-		StdResult::Ok(_) => {}
-		StdResult::Err(err) => {
-			prompt!(format!("Failed to copy installer into extension folder. Please contact Tupelo Workbench with this error message: {err:?} "));
-			return false;
-		}
 	}
 	
 	println!("Done.");

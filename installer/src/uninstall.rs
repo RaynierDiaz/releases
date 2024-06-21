@@ -9,7 +9,7 @@ use crate::uninstallers;
 
 pub type UninstallSucceeded = bool;
 
-pub fn uninstall(is_self_update: bool) -> UninstallSucceeded {
+pub fn uninstall(is_self_update: bool) -> (UninstallSucceeded, PathBuf) {
 	
 	let revit_dir = prompt!("Where is Revit located? "; ["C:\\ProgramData\\Autodesk\\Revit"] SimpleValidate (|input| {
 		println!("Testing: '{input}'");
@@ -25,25 +25,25 @@ pub fn uninstall(is_self_update: bool) -> UninstallSucceeded {
 		StdResult::Ok(v) => v,
 		StdResult::Err(err) => {
 			prompt!(format!("Error while uninstalling, please contact Tupelo Workbench with this message: {err:?} "));
-			return false;
+			return (false, revit_dir);
 		}
 	};
 	
 	let result = match format_version {
-		1 => uninstallers::uninstall_format_1::uninstall(revit_dir),
-		2 => uninstallers::uninstall_format_2::uninstall(revit_dir),
+		1 => uninstallers::uninstall_format_1::uninstall(&revit_dir),
+		2 => uninstallers::uninstall_format_2::uninstall(&revit_dir),
 		_ => Err(Error::msg("Unknown format version: {format_version}")),
 	};
 	if let Err(err) = result {
 		prompt!(format!("Error while uninstalling, please contact Tupelo Workbench with this message: {err:?} "));
-		return false;
+		return (false, revit_dir);
 	}
 	
 	if !is_self_update {
 		prompt!("Uninstall successful, press enter to close the installer");
 	}
 	
-	true
+	(true, revit_dir)
 }
 
 

@@ -39,19 +39,9 @@ fn main() {
 	args.next();
 	let first_arg = args.next();
 	
-	match first_arg.as_deref() {
-		Some("--self-update") => {
-			self_update::self_update();
-			return;
-		}
-		Some("--auto-install") => {
-			install::install(false);
-			if let Err(err) = self_replace::self_delete() {
-				prompt!(format!("Failed to delete temporary installer. Please contact Tupelo Workbench with this error message: {err:?} "));
-			}
-			return;
-		}
-		_ => {}
+	if first_arg.as_deref() == Some("--self-update") {
+		self_update::self_update();
+		return;
 	}
 	
 	let options = &[
@@ -60,8 +50,8 @@ fn main() {
 		InputOption::new("uninstall", vec!("3"), 3),
 	];
 	match prompt!("What would you like to do? "; options).1.data {
-		1 => {let _ = install::install(false);},
-		2 => {let _ = install::install(true);},
+		1 => {let _ = install::install(false, None);},
+		2 => {let _ = install::install(true, None);},
 		3 => {let _ = uninstall::uninstall(false);},
 		_ => unreachable!(),
 	}
