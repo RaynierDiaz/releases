@@ -1,5 +1,4 @@
-use std::{fs::{self, File}, path::{Path, PathBuf}};
-use fs2::FileExt;
+use std::{fs, path::{Path, PathBuf}};
 use smart_read::prelude::*;
 use anyhow::*;
 use std::result::Result as StdResult;
@@ -68,19 +67,19 @@ pub fn delete_extension_folder(revit_dir: &Path) -> Result<DidDeleteExtensionFol
 		return Ok(false);
 	}
 	
-	// ensure file is unlocked
-	let frontend_file = File::open(extension_path.join("Frontend.dll")).context("Attempted to open Frontend.dll")?;
-	while is_file_locked(&frontend_file).context("Attempted to check if Frontend.dll is locked")? {
-		let input = prompt!("Revit seems to be open, please close Revit or any other programs that locking this extension (or enter \"stop\" to stop)");
-		if input.eq_ignore_ascii_case("stop") {
-			prompt!("Affirmed, stopping uninstall.");
-			return Ok(false);
-		}
-	}
-	
 	// delete
 	println!("Removing extension files...");
-	fs::remove_dir_all(extension_path)?;
+	loop {
+		match fs::remove_dir_all(&extension_path) {
+			StdResult::Ok(()) => break,
+			StdResult::Err(err) => {
+				println!();
+				println!("Failed to delete files (NOTE: If Revit is open, please close it and wait a few seconds before continuing). Error message: {err:?}");
+				let result = prompt!("Would you like to retry? "; [true] YesNoInput);
+				if !result {return Ok(false);}
+			}
+		};
+	}
 	println!("Done.");
 	
 	Ok(true)
@@ -100,14 +99,4 @@ pub fn delete_addin_files(revit_dir: &Path) -> Result<()> {
 	}
 	println!("Done.");
 	Ok(())
-}
-
-fn is_file_locked(file: &File) -> Result<bool> {
-	match file.try_lock_exclusive() {
-		StdResult::Ok(_) => {
-			file.unlock().context("Attempted to undo lock on Frontend.dll")?;
-			Ok(false)
-		}
-		StdResult::Err(_) => Ok(true),
-	}
 }

@@ -34,12 +34,15 @@ pub fn uninstall(is_self_update: bool) -> (UninstallSucceeded, PathBuf) {
 		2 => uninstallers::uninstall_format_2::uninstall(&revit_dir),
 		_ => Err(Error::msg("Unknown format version: {format_version}")),
 	};
-	if let Err(err) = result {
-		prompt!(format!("Error while uninstalling, please contact Tupelo Workbench with this message: {err:?} "));
-		return (false, revit_dir);
-	}
+	let uninstall_succeeded = match result {
+		StdResult::Ok(v) => v,
+		StdResult::Err(err) => {
+			prompt!(format!("Error while uninstalling, please contact Tupelo Workbench with this message: {err:?} "));
+			return (false, revit_dir);
+		}
+	};
 	
-	if !is_self_update {
+	if !is_self_update && uninstall_succeeded {
 		prompt!("Uninstall successful, press enter to close the installer");
 	}
 	
