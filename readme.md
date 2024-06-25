@@ -5,6 +5,7 @@ This is an addin for Autodesk Revit created by and for Tupelo Workbench.
 ### Features:
 
 - **Conduit Creation** (unfinished)
+- **Pipe Creation** (unfinished)
 
 <br>
 

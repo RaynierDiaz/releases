@@ -1,8 +1,5 @@
-use std::{fs, path::{Path, PathBuf}};
-use smart_read::prelude::*;
-use anyhow::*;
-use std::result::Result as StdResult;
-use crate::uninstall::UninstallSucceeded;
+use crate::prelude::*;
+use crate::operations::uninstall::UninstallSucceeded;
 
 
 
@@ -18,7 +15,7 @@ pub fn uninstall(revit_dir: &Path) -> Result<UninstallSucceeded> {
 	if !did_delete_extension_folder {
 		let exit = prompt!("The extension folder was not deleted, would you like to cancel the uninstall? "; [true] YesNoInput);
 		if exit {
-			prompt!("Affirmed, canceling uninstall. ");
+			prompt!("Affirmed, canceling uninstall.");
 			return Ok(false);
 		}
 		println!("Affirmed, continuing uninstall...");

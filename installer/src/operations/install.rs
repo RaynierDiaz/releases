@@ -1,12 +1,7 @@
+use crate::prelude::*;
 use reqwest::blocking::Client;
-use anyhow::*;
-use smart_read::prelude::*;
 use zip::ZipArchive;
-use std::fs;
 use std::io::{Cursor, Read};
-use std::path::{Path, PathBuf};
-use std::result::Result as StdResult;
-use crate::*;
 
 
 
@@ -47,7 +42,7 @@ pub fn install(is_offline: bool, revit_dir: Option<PathBuf>, is_self_update: boo
 	#[allow(unused_assignments)]
 	let mut assets_owned = vec!();
 	let assets = if is_offline {
-		const ASSETS_DATA: &[u8] = include_bytes!("Assets.zip");
+		const ASSETS_DATA: &[u8] = include_bytes!("../Assets.zip");
 		ASSETS_DATA
 	} else {
 		println!("Downloading assets...");

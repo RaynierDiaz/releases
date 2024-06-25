@@ -1,9 +1,5 @@
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::result::Result as StdResult;
-use smart_read::prelude::*;
-use anyhow::*;
-use crate::uninstallers;
+use crate::prelude::*;
+use crate::operations::uninstallers;
 
 
 

@@ -1,8 +1,5 @@
-use std::{fs, path::{Path, PathBuf}};
-use smart_read::prelude::*;
-use anyhow::*;
-use std::result::Result as StdResult;
-use crate::uninstall::UninstallSucceeded;
+use crate::prelude::*;
+use crate::operations::uninstall::UninstallSucceeded;
 
 
 
@@ -37,40 +34,9 @@ pub type DidDeleteExtensionFolder = bool;
 
 pub fn delete_extension_folder(revit_dir: &Path) -> Result<DidDeleteExtensionFolder> {
 	
-	// read addins file
-	let addins_path = revit_dir.join("Addins");
-	let addin_file_path =
-		fs::read_dir(&addins_path).context(format!("Attempted to read contents of {addins_path:?}"))?
-		.find(|entry| {
-			let StdResult::Ok(entry) = entry else {return false;};
-			entry.path().join("TupeloWorkbench.addin").exists()
-		});
-	let Some(addin_file_path) = addin_file_path else {
-		prompt!("Warning: Could not find any .addin file for this extension, so the path of the dlls is unknown and cannot be removed automatically. They are usually stored at C:\\ProgramData\\TupeloWorkbenchExt, though the install path could be customized");
-		return Ok(false);
-	};
-	let addin_file_path = addin_file_path?.path().join("TupeloWorkbench.addin");
-	
-	// get extension path
-	let addin_contents = fs::read_to_string(&addin_file_path).context(format!("Attempted to read contents of {addin_file_path:?}"))?;
-	let assembly_line = addin_contents.lines()
-		.find(|line| {
-			line.trim().starts_with("<Assembly>")
-		})
-		.expect("Could not find \"<Assembly>\" line in addin file.")
-		.trim();
-	
-	let extension_path = PathBuf::from(&assembly_line.trim()[10..assembly_line.len()-23]);
-	let confirm = prompt!(format!("The detected extension path is {extension_path:?}, does that sound right? "); [true] YesNoInput);
-	if !confirm {
-		prompt!("Affirmed, said path will not be deleted.");
-		return Ok(false);
-	}
-	
-	// delete
 	println!("Removing extension files...");
 	loop {
-		match fs::remove_dir_all(&extension_path) {
+		match fs::remove_dir_all(&revit_dir.join("Tupelo Workbench")) {
 			StdResult::Ok(()) => break,
 			StdResult::Err(err) => {
 				println!();

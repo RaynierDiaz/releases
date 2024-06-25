@@ -8,27 +8,23 @@ pub mod settings {
 
 
 
-use serde::Deserialize;
-use smart_read::prelude::*;
+use egui::{Layout, Vec2};
+
+use crate::prelude::*;
 
 
 
-pub mod install;
-pub mod self_update;
-pub mod uninstall;
-pub mod uninstallers;
+pub mod operations;
+pub mod data;
+pub mod utils;
 
-
-
-#[derive(Deserialize, Debug)]
-struct Asset {
-	name: String,
-	browser_download_url: String,
-}
-
-#[derive(Deserialize)]
-struct Release {
-	assets: Vec<Asset>,
+pub mod prelude {
+	pub use crate::{*, data::*};
+	pub use std::{fs, path::{Path, PathBuf}};
+	pub use std::result::Result as StdResult;
+	pub use serde::{Serialize, Deserialize};
+	pub use anyhow::*;
+	pub use smart_read::prelude::*;
 }
 
 
@@ -38,22 +34,64 @@ fn main() {
 	let mut args = std::env::args();
 	args.next();
 	let first_arg = args.next();
-	
 	if first_arg.as_deref() == Some("--self-update") {
-		self_update::self_update();
+		operations::self_update::self_update();
 		return;
 	}
 	
-	let options = &[
-		InputOption::new("install / update (uses latest version)", vec!("1"), 1),
-		InputOption::new("offline install", vec!("2"), 2),
-		InputOption::new("uninstall", vec!("3"), 3),
-	];
-	match prompt!("What would you like to do? "; options).1.data {
-		1 => {let _ = install::install(false, None, false);},
-		2 => {let _ = install::install(true, None, false);},
-		3 => {let _ = uninstall::uninstall(false);},
-		_ => unreachable!(),
+	let eframe_options = eframe::NativeOptions {
+		viewport: egui::ViewportBuilder::default()
+			.with_inner_size([500.0, 350.0])
+			.with_min_inner_size([300.0, 220.0])
+			.with_icon(
+				eframe::icon_data::from_png_bytes(include_bytes!("../assets/icon 256.png"))
+					.expect("Failed to load icon"),
+			),
+		..Default::default()
+	};
+	let result = eframe::run_native(
+		"Tupelo Workbench Installer",
+		eframe_options,
+		Box::new(|cc| Box::new(App::new(cc))),
+	);
+	if let Err(err) = result {
+		utils::show_message_box("Error", format!("Fatal error while running installer: {err}"));
 	}
 	
+}
+
+
+
+impl eframe::App for App {
+	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+		match &mut self.state {
+			
+			AppState::ChooseAction {selected_action} => {
+				
+				egui::CentralPanel::default().show(ctx, |ui| {
+					
+					ui.spacing_mut().item_spacing.y = 5.0;
+					ui.heading("Tupelo Workbench Installer");
+					ui.spacing_mut().item_spacing.y = 15.0;
+					ui.separator();
+					ui.label("What would you like to do?");
+					ui.spacing_mut().item_spacing.y = 5.0;
+					ui.radio_value(selected_action, SelectedAction::Install, "Install");
+					ui.radio_value(selected_action, SelectedAction::OfflineInstall, "Offline Install");
+					ui.radio_value(selected_action, SelectedAction::Uninstall, "Uninstall");
+					
+					ui.with_layout(Layout::bottom_up(egui::Align::Max), |ui| {
+						ui.spacing_mut().item_spacing.x = 20.0;
+						ui.spacing_mut().item_spacing.y = 20.0;
+						if ui.add_sized(Vec2::new(90.0, 35.0), egui::Button::new("Start")).clicked() {
+							panic!();
+						}
+					})
+					
+				});
+				
+			}
+			
+		}
+	}
 }

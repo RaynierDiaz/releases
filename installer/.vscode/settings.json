@@ -4,11 +4,15 @@
 		"Addins",
 		"deleter",
 		"Diaz",
+		"eframe",
+		"egui",
 		"errorlevel",
 		"nobreak",
 		"Raynier",
 		"reqwest",
 		"Revit",
-		"tasklist"
+		"tasklist",
+		"winapi",
+		"winuser"
 	]
 }
