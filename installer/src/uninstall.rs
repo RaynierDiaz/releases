@@ -32,7 +32,8 @@ pub fn uninstall(is_self_update: bool) -> (UninstallSucceeded, PathBuf) {
 	let result = match format_version {
 		1 => uninstallers::uninstall_format_1::uninstall(&revit_dir),
 		2 => uninstallers::uninstall_format_2::uninstall(&revit_dir),
-		_ => Err(Error::msg("Unknown format version: {format_version}")),
+		3 => uninstallers::uninstall_format_3::uninstall(&revit_dir),
+		_ => Err(Error::msg(format!("Unknown format version: {format_version}"))),
 	};
 	let uninstall_succeeded = match result {
 		StdResult::Ok(v) => v,

@@ -4,7 +4,13 @@
 <br>
 <br>
 
-- next
+- Alpha 1.1.3 (24/06/25)
+  - Moved install directory to revit folders
+
+<br>
+
+- Alpha 1.1.2 (24/06/21)
+  - Added self-updating
   - Finished conduit diameter text box
 
 <br>

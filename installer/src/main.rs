@@ -3,7 +3,7 @@ pub mod settings {
 	pub const REPO_NAME: &str = "releases";
 	pub const ASSETS_NAME: &str = "Assets.zip";
 	pub const INSTALLER_NAME: &str = "Installer.exe";
-	pub const LATEST_ASSETS_VERSION: usize = 2;
+	pub const LATEST_ASSETS_VERSION: usize = 3;
 }
 
 
@@ -50,8 +50,8 @@ fn main() {
 		InputOption::new("uninstall", vec!("3"), 3),
 	];
 	match prompt!("What would you like to do? "; options).1.data {
-		1 => {let _ = install::install(false, None);},
-		2 => {let _ = install::install(true, None);},
+		1 => {let _ = install::install(false, None, false);},
+		2 => {let _ = install::install(true, None, false);},
 		3 => {let _ = uninstall::uninstall(false);},
 		_ => unreachable!(),
 	}

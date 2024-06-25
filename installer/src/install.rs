@@ -12,7 +12,7 @@ use crate::*;
 
 pub type InstallSucceeded = bool;
 
-pub fn install(is_offline: bool, revit_dir: Option<PathBuf>) -> InstallSucceeded {
+pub fn install(is_offline: bool, revit_dir: Option<PathBuf>, is_self_update: bool) -> InstallSucceeded {
 	
 	// get revit dir
 	let revit_dir = revit_dir.unwrap_or_else(|| {
@@ -42,16 +42,6 @@ pub fn install(is_offline: bool, revit_dir: Option<PathBuf>) -> InstallSucceeded
 			}
 		}
 	}
-	
-	// get install dir
-	let ext_dir = prompt!("Where would you like to install the extension? "; ["C:\\ProgramData\\TupeloWorkbenchExt"] SimpleValidate (|input| {
-		if PathBuf::from(input).to_str().is_some() {
-			StdResult::Ok(())
-		} else {
-			StdResult::Err(String::from("Unable to convert path back to string"))
-		}
-	}));
-	let ext_dir = PathBuf::from(ext_dir);
 	
 	// get / download assets
 	#[allow(unused_assignments)]
@@ -96,14 +86,16 @@ pub fn install(is_offline: bool, revit_dir: Option<PathBuf>) -> InstallSucceeded
 		return false;
 	}
 	
-	if let Err(err) = write_files(&mut zip_data, &revit_dir, &ext_dir) {
+	if let Err(err) = write_files(&mut zip_data, &revit_dir) {
 		prompt!(format!("Failed to write extension files. Please contact Tupelo Workbench with this error message: {err:?} "));
 		return false;
 	}
 	
 	println!("Done.");
 	
-	prompt!("Install successful, press enter to close the installer");
+	if !is_self_update {
+		prompt!("Install successful, press enter to close the installer");
+	}
 	
 	true
 }
@@ -192,10 +184,11 @@ pub fn get_file_bytes(zip_data: &mut ZipArchive<Cursor<&[u8]>>, file_name: &'sta
 
 
 
-pub fn write_files(zip_data: &mut ZipArchive<Cursor<&[u8]>>, revit_dir: &Path, ext_dir: &Path) -> Result<()> {
+pub fn write_files(zip_data: &mut ZipArchive<Cursor<&[u8]>>, revit_dir: &Path) -> Result<()> {
+	let ext_dir = revit_dir.join("Tupelo Workbench");
 	
 	// dlls
-	fs::create_dir_all(ext_dir).context(format!("Attempted to create folders at {ext_dir:?}"))?;
+	fs::create_dir_all(&ext_dir).context(format!("Attempted to create folders at {ext_dir:?}"))?;
 	let frontend_dll_data = get_file_bytes(zip_data, "Frontend.dll")?;
 	let backend_dll_data = get_file_bytes(zip_data, "Backend.dll")?;
 	

@@ -9,7 +9,7 @@ pub fn self_update() {
 	if !uninstall_succeeded {return;}
 	
 	// reinstall
-	crate::install::install(true, Some(revit_dir));
+	crate::install::install(true, Some(revit_dir), true);
 	
 	// delete self
 	if let Err(err) = self_replace::self_delete() {

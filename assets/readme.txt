@@ -1,7 +1,8 @@
 Tupelo Workbench Extension
 https://github.com/RaynierDiaz/releases
 
-Thank you for downloading our extension! These files are the core of the extension, but
+Thank you for downloading our extension! These files are the core of the extension, and
 changing the files manually is not recommended unless you really know what you're doing.
 
-To update / uninstall, simply run the installer again (but make sure to move it to a new location first).
+To update / uninstall, please download the extension installer here:
+https://github.com/RaynierDiaz/releases/releases/latest
