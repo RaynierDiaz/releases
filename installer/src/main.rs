@@ -47,6 +47,7 @@ fn main() {
 				eframe::icon_data::from_png_bytes(include_bytes!("../assets/icon 256.png"))
 					.expect("Failed to load icon"),
 			),
+		multisampling: 8,
 		..Default::default()
 	};
 	let result = eframe::run_native(
@@ -68,6 +69,7 @@ impl eframe::App for App {
 			
 			AppState::ChooseAction {selected_action} => {
 				
+				let mut new_state = None;
 				egui::CentralPanel::default().show(ctx, |ui| {
 					
 					ui.spacing_mut().item_spacing.y = 5.0;
@@ -84,11 +86,26 @@ impl eframe::App for App {
 						ui.spacing_mut().item_spacing.x = 20.0;
 						ui.spacing_mut().item_spacing.y = 20.0;
 						if ui.add_sized(Vec2::new(90.0, 35.0), egui::Button::new("Start")).clicked() {
-							panic!();
+							new_state = Some(match selected_action {
+								SelectedAction::Install => AppState::Installing {is_offline: false},
+								SelectedAction::OfflineInstall => AppState::Installing {is_offline: true},
+								SelectedAction::Uninstall => AppState::Uninstalling,
+							});
 						}
 					})
 					
 				});
+				
+				if let Some(new_state) = new_state {
+					self.state = new_state;
+				}
+			}
+			
+			AppState::Installing {is_offline} => {
+				
+			}
+			
+			AppState::Uninstalling => {
 				
 			}
 			

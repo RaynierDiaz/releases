@@ -12,6 +12,10 @@ impl App {
 		
 		let mut visuals = Visuals::light();
 		visuals.override_text_color = Some(Color32::from_gray(0));
+		visuals.widgets.inactive.bg_fill = Color32::from_gray(220);
+		visuals.widgets.inactive.weak_bg_fill = Color32::from_gray(220);
+		visuals.widgets.hovered.bg_fill = Color32::from_gray(200);
+		visuals.widgets.active.bg_fill = Color32::from_gray(180);
 		cc.egui_ctx.set_visuals(visuals);
 		cc.egui_ctx.set_zoom_factor(1.333);
 		
@@ -27,6 +31,8 @@ impl App {
 
 pub enum AppState {
 	ChooseAction {selected_action: SelectedAction},
+	Installing {is_offline: bool},
+	Uninstalling,
 }
 
 
