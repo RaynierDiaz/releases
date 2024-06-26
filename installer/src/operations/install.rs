@@ -6,14 +6,21 @@ use std::io::{Cursor, Read};
 
 
 
-pub fn install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option<PathBuf>) -> Result<()> {
+pub fn install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option<PathBuf>) -> Result<DidFinish<()>> {
+	match try_install(inner.clone(), is_offline, revit_path) {
+		StdResult::Ok(()) => Ok(Some(())),
+		StdResult::Err(err) => {
+			background_thread::show_error_message(inner, &err)?;
+			Ok(None)
+		}
+	}
+}
+
+
+
+pub fn try_install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option<PathBuf>) -> Result<()> {
 	
-	// get revit path
-	const DEFAULT_REVIT_PATH: &str = "C:\\ProgramData\\Autodesk\\Revit";
-	let revit_path = revit_path.unwrap_or_else(|| PathBuf::from(DEFAULT_REVIT_PATH));
-	let revit_path = if revit_path.exists() && revit_path.join("Addins").exists() {revit_path} else {
-		operations::get_revit_path::get_revit_path(inner.clone(), "Install")?
-	};
+	let revit_path = operations::get_revit_path::get_revit_path(inner.clone(), "Install", revit_path)?;
 	
 	// check if already installed
 	match check_already_installed(&revit_path) {
@@ -40,7 +47,7 @@ pub fn install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option
 				drop(inner_locked);
 				if exit_just_clicked {return Ok(());}
 				if uninstall_just_clicked {
-					operations::uninstall::uninstall(inner.clone(), false, Some(revit_path.clone()))?;
+					operations::uninstall::uninstall(inner.clone(), Some(revit_path.clone()));
 					break;
 				}
 			}
@@ -108,7 +115,7 @@ pub fn install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option
 	}
 	
 	if let Err(err) = write_files(&mut zip_data, &revit_path) {
-		return Err(Error::msg(format!("Failed to write extension files. Please contact Tupelo Workbench with this error message: {err:#?} ")));
+		return Err(Error::msg(format!("Failed to write addin files. Please contact Tupelo Workbench with this error message: {err:#?} ")));
 	}
 	
 	thread::sleep(Duration::SECOND);
@@ -238,7 +245,7 @@ pub fn write_files(zip_data: &mut ZipArchive<Cursor<&[u8]>>, revit_path: &Path) 
 	// .addin
 	let addins_folder = revit_path.join("Addins");
 	let addin_file_contents = get_file_text(zip_data, "TupeloWorkbench.addin")?;
-	let addin_file_contents = addin_file_contents.replace("EXTENSION_DIR", ext_dir.to_str().unwrap());
+	let addin_file_contents = addin_file_contents.replace("addin_DIR", ext_dir.to_str().unwrap());
 	
 	for child in fs::read_dir(&addins_folder)? {
 		let StdResult::Ok(child) = child else {

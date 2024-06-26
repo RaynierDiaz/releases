@@ -46,7 +46,10 @@ pub fn try_run(inner: Arc<Mutex<InnerApp>>) -> Result<()> {
 	let inner_locked = inner.lock().map_err_string()?;
 	let is_self_update = inner_locked.is_self_update;
 	drop(inner_locked);
-	if is_self_update {return operations::self_update::self_update(inner)}
+	if is_self_update {
+		operations::self_update::self_update(inner)?;
+		return Ok(());
+	}
 	
 	// select action
 	loop {
@@ -69,7 +72,7 @@ pub fn try_run(inner: Arc<Mutex<InnerApp>>) -> Result<()> {
 	match selected_action {
 		0 => {let _ = operations::install::install(inner.clone(), false, None)?;}
 		1 => {let _ = operations::install::install(inner.clone(), true, None)?;}
-		2 => {let _ = operations::uninstall::uninstall(inner.clone(), false, None)?;}
+		2 => {let _ = operations::uninstall::uninstall(inner.clone(), None);}
 		_ => unreachable!(),
 	};
 	

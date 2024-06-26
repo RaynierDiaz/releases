@@ -3,7 +3,20 @@ use utils::unsynced_err;
 
 
 
-pub fn get_revit_path(inner: Arc<Mutex<InnerApp>>, header: &'static str) -> Result<PathBuf> {
+pub fn get_revit_path(inner: Arc<Mutex<InnerApp>>, header: &'static str, given_revit_path: Option<PathBuf>) -> Result<PathBuf> {
+	
+	let mut inner_locked = inner.lock().map_err_string()?;
+	inner_locked.gui_elements.clear();
+	inner_locked.gui_elements.push(GuiElement::Header (String::from(header)));
+	inner_locked.gui_elements.push(GuiElement::Separator);
+	inner_locked.gui_elements.push(GuiElement::Label (String::from("Location Revit, please wait...")));
+	drop(inner_locked);
+	
+	thread::sleep(Duration::SECOND / 2);
+	
+	const DEFAULT_REVIT_PATH: &str = "C:\\ProgramData\\Autodesk\\Revit";
+	let revit_path = given_revit_path.unwrap_or_else(|| PathBuf::from(DEFAULT_REVIT_PATH));
+	if revit_path.exists() && revit_path.join("Addins").exists() {return Ok(revit_path);}
 	
 	let mut inner_locked = inner.lock().map_err_string()?;
 	inner_locked.gui_elements.clear();

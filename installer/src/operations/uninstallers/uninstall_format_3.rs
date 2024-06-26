@@ -1,61 +1,79 @@
 use crate::prelude::*;
-use crate::operations::uninstall::UninstallSucceeded;
-use smart_read::prelude::*;
+use utils::unsynced_err;
 
 
 
-pub fn uninstall(revit_path: &Path) -> Result<UninstallSucceeded> {
+pub fn uninstall(inner: Arc<Mutex<InnerApp>>, revit_path: &Path) -> Result<()> {
 	
-	let did_delete_extension_folder = match delete_extension_folder(revit_path) {
-		StdResult::Ok(v) => v,
-		StdResult::Err(err) => {
-			prompt!(format!("Failed to delete extension folder, usually located at C:\\ProgramData\\TupeloWorkbenchExt. Please contact Tupelo Workbench with this error message: {err:#?}. "));
-			return Ok(false);
-		}
-	};
-	if !did_delete_extension_folder {
-		let exit = prompt!("The extension folder was not deleted, would you like to cancel the uninstall? "; [true] YesNoInput);
-		if exit {
-			prompt!("Affirmed, canceling uninstall.");
-			return Ok(false);
-		}
-		println!("Affirmed, continuing uninstall...");
-	}
-	if let Err(err) = delete_addin_files(revit_path) {
-		prompt!(format!("Failed to delete addin files, usually located at C:\\ProgramData\\Autodesk\\Revit\\Addins\\___\\TupeloWorkbench.addin. Please contact Tupelo Workbench with this error message: {err:#?} "));
-		return Ok(false);
+	let result = delete_addin_folder(inner.clone(), revit_path);
+	if let Err(err) = result {
+		return Err(Error::msg(format!("Failed to delete addin folder, located at {:?}. Please contact Tupelo Workbench with this error message: {err:#?}.", revit_path.join("Tupelo Workbench"))));
 	}
 	
-	Ok(true)
+	let result = delete_addin_files(inner, revit_path);
+	if let Err(err) = result {
+		return Err(Error::msg(format!("Failed to delete addin files, located at {:?}. Please contact Tupelo Workbench with this error message: {err:#?}.", revit_path.join("Addins"))));
+	}
+	
+	Ok(())
 }
 
 
 
-pub type DidDeleteExtensionFolder = bool;
-
-pub fn delete_extension_folder(revit_path: &Path) -> Result<DidDeleteExtensionFolder> {
+pub fn delete_addin_folder(inner: Arc<Mutex<InnerApp>>, revit_path: &Path) -> Result<()> {
 	
-	println!("Removing extension files...");
+	let mut inner_locked = inner.lock().map_err_string()?;
+	inner_locked.gui_elements.clear();
+	inner_locked.gui_elements.push(GuiElement::Header (String::from("Uninstall")));
+	inner_locked.gui_elements.push(GuiElement::Separator);
+	inner_locked.gui_elements.push(GuiElement::Label (String::from("Removing addin folder...")));
+	drop(inner_locked);
+	thread::sleep(Duration::SECOND);
+	
+	// delete
 	loop {
 		match fs::remove_dir_all(&revit_path.join("Tupelo Workbench")) {
 			StdResult::Ok(()) => break,
 			StdResult::Err(err) => {
-				println!();
-				println!("Failed to delete files (NOTE: If Revit is open, please close it and wait a few seconds before continuing). Error message: {err:#?}");
-				let result = prompt!("Would you like to retry? "; [true] YesNoInput);
-				if !result {return Ok(false);}
+				let mut inner_locked = inner.lock().map_err_string()?;
+				inner_locked.gui_elements.clear();
+				inner_locked.gui_elements.push(GuiElement::Header (String::from("Uninstall")));
+				inner_locked.gui_elements.push(GuiElement::Separator);
+				inner_locked.gui_elements.push(GuiElement::Label (format!("Failed to delete addin folder (NOTE: If Revit is open, please close it and wait a few seconds before continuing). Error message: {err:#?}")));
+				inner_locked.gui_elements.push(GuiElement::BottomElements (vec!(
+					GuiElement::Button {text: String::from("Retry"), just_clicked: false},
+					GuiElement::Button {text: String::from("Exit"), just_clicked: false},
+				)));
+				drop(inner_locked);
+				loop {
+					let mut inner_locked = inner.lock().map_err_string()?;
+					let GuiElement::BottomElements (bottom_elements) = &mut inner_locked.gui_elements[3] else {return unsynced_err();};
+					let GuiElement::Button {just_clicked: retry_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+					let retry_just_clicked = mem::take(retry_just_clicked);
+					let GuiElement::Button {just_clicked: exit_just_clicked, ..} = &mut bottom_elements[1] else {return unsynced_err();};
+					let exit_just_clicked = mem::take(exit_just_clicked);
+					if retry_just_clicked {continue;}
+					if exit_just_clicked {return Err(err.into());}
+				}
 			}
 		};
 	}
-	println!("Done.");
 	
-	Ok(true)
+	Ok(())
 }
 
 
 
-pub fn delete_addin_files(revit_path: &Path) -> Result<()> {
-	println!("Removing .addin files...");
+pub fn delete_addin_files(inner: Arc<Mutex<InnerApp>>, revit_path: &Path) -> Result<()> {
+	
+	let mut inner_locked = inner.lock().map_err_string()?;
+	inner_locked.gui_elements.clear();
+	inner_locked.gui_elements.push(GuiElement::Header (String::from("Uninstall")));
+	inner_locked.gui_elements.push(GuiElement::Separator);
+	inner_locked.gui_elements.push(GuiElement::Label (String::from("Removing addin files...")));
+	drop(inner_locked);
+	thread::sleep(Duration::SECOND);
+	
 	let addins_path = revit_path.join("Addins");
 	for entry in fs::read_dir(&addins_path).context(format!("Attempted to read contents of {addins_path:?}"))? {
 		let StdResult::Ok(entry) = entry else {continue;};
@@ -64,6 +82,6 @@ pub fn delete_addin_files(revit_path: &Path) -> Result<()> {
 			fs::remove_file(addin_file_path)?;
 		}
 	}
-	println!("Done.");
+	
 	Ok(())
 }

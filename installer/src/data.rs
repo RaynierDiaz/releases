@@ -3,6 +3,10 @@ use egui::{Color32, Visuals};
 
 
 
+pub type DidFinish<T> = Option<T>;
+
+
+
 pub struct App {
 	pub inner: Arc<Mutex<InnerApp>>,
 }
@@ -26,8 +30,8 @@ impl App {
 }
 
 impl eframe::App for App {
-	fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
-		let result = gui::app_update(self, ctx, frame);
+	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+		let result = gui::app_update(self, ctx);
 		if let Err(err) = result {
 			utils::fatal_error( format!("Fatal error while running installer: {err:#?}"));
 		}

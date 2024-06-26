@@ -3,7 +3,7 @@ use egui::{Layout, Ui, Vec2};
 
 
 
-pub fn app_update(app: &mut App, ctx: &egui::Context, _frame: &mut eframe::Frame) -> Result<()> {
+pub fn app_update(app: &mut App, ctx: &egui::Context) -> Result<()> {
 	let mut inner_locked = app.inner.lock().map_err_string()?;
 	if inner_locked.should_close {
 		ctx.send_viewport_cmd(egui::ViewportCommand::Close);

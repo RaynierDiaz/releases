@@ -1,34 +1,61 @@
 use crate::prelude::*;
 use crate::operations::uninstallers;
-use smart_read::prelude::*;
+use utils::unsynced_err;
 
 
 
-pub type UninstallSucceeded = bool;
+pub fn uninstall(inner: Arc<Mutex<InnerApp>>, revit_path: Option<PathBuf>) -> Result<DidFinish<PathBuf>> {
+	match try_uninstall(inner.clone(), revit_path) {
+		StdResult::Ok(revit_dir) => Ok(Some(revit_dir)),
+		StdResult::Err(err) => {
+			background_thread::show_error_message(inner, &err)?;
+			Ok(None)
+		}
+	}
+}
 
-pub fn uninstall(inner: Arc<Mutex<InnerApp>>, is_self_update: bool, revit_path: Option<PathBuf>) -> Result<(UninstallSucceeded, PathBuf)> {
+
+
+pub fn try_uninstall(inner: Arc<Mutex<InnerApp>>, revit_path: Option<PathBuf>) -> Result<PathBuf> {
 	
-	const DEFAULT_REVIT_PATH: &str = "C:\\ProgramData\\Autodesk\\Revit";
-	let revit_path = revit_path.unwrap_or_else(|| PathBuf::from(DEFAULT_REVIT_PATH));
-	let revit_path = if revit_path.exists() && revit_path.join("Addins").exists() {revit_path} else {
-		operations::get_revit_path::get_revit_path(inner.clone(), "Uninstall")?
-	};
+	let revit_path = operations::get_revit_path::get_revit_path(inner.clone(), "Uninstall", revit_path)?;
+	
+	let mut inner_locked = inner.lock().map_err_string()?;
+	inner_locked.gui_elements.clear();
+	inner_locked.gui_elements.push(GuiElement::Header (String::from("Uninstall")));
+	inner_locked.gui_elements.push(GuiElement::Separator);
+	inner_locked.gui_elements.push(GuiElement::Label (String::from("Determining addin format version, please wait...")));
+	drop(inner_locked);
+	
+	thread::sleep(Duration::SECOND / 3);
 	
 	let format_version = get_format_version(&revit_path)?;
-	
-	let result = match format_version {
-		1 => uninstallers::uninstall_format_1::uninstall(&revit_path),
-		2 => uninstallers::uninstall_format_2::uninstall(&revit_path),
-		3 => uninstallers::uninstall_format_3::uninstall(&revit_path),
-		_ => Err(Error::msg(format!("Unknown format version: {format_version}"))),
-	};
-	let uninstall_succeeded = result?;
-	
-	if !is_self_update && uninstall_succeeded {
-		prompt!("Uninstall successful, press enter to close the installer");
+	match format_version {
+		1 => uninstallers::uninstall_format_1::uninstall(inner.clone(), &revit_path)?,
+		2 => uninstallers::uninstall_format_2::uninstall(inner.clone(), &revit_path)?,
+		3 => uninstallers::uninstall_format_3::uninstall(inner.clone(), &revit_path)?,
+		_ => return Err(Error::msg(format!("Unknown format version: {format_version}"))),
 	}
 	
-	Ok((true, revit_path))
+	let mut inner_locked = inner.lock().map_err_string()?;
+	inner_locked.gui_elements.clear();
+	inner_locked.gui_elements.push(GuiElement::Header (String::from("Uninstall")));
+	inner_locked.gui_elements.push(GuiElement::Separator);
+	inner_locked.gui_elements.push(GuiElement::Label (String::from("Uninstall finished successfully.")));
+	inner_locked.gui_elements.push(GuiElement::BottomElements (vec!(
+		GuiElement::Button {text: String::from("Close"), just_clicked: false},
+	)));
+	drop(inner_locked);
+	loop {
+		thread::sleep(Duration::from_millis(100));
+		let mut inner_locked = inner.lock().map_err_string()?;
+		let GuiElement::BottomElements (bottom_elements) = &mut inner_locked.gui_elements[3] else {return unsynced_err();};
+		let GuiElement::Button {just_clicked: close_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+		let close_just_clicked = mem::take(close_just_clicked);
+		if close_just_clicked {break;}
+	}
+	
+	Ok(revit_path)
 }
 
 
