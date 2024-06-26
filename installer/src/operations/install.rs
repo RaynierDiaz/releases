@@ -6,8 +6,8 @@ use std::io::{Cursor, Read};
 
 
 
-pub fn install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option<PathBuf>) -> Result<DidFinish<()>> {
-	match try_install(inner.clone(), is_offline, revit_path) {
+pub fn install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option<PathBuf>, is_self_update: bool) -> Result<DidFinish<()>> {
+	match try_install(inner.clone(), is_offline, revit_path, is_self_update) {
 		StdResult::Ok(()) => Ok(Some(())),
 		StdResult::Err(err) => {
 			background_thread::show_error_message(inner, &err)?;
@@ -18,7 +18,7 @@ pub fn install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option
 
 
 
-pub fn try_install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option<PathBuf>) -> Result<()> {
+pub fn try_install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option<PathBuf>, is_self_update: bool) -> Result<()> {
 	
 	let revit_path = operations::get_revit_path::get_revit_path(inner.clone(), "Install", revit_path)?;
 	
@@ -47,7 +47,7 @@ pub fn try_install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Op
 				drop(inner_locked);
 				if exit_just_clicked {return Ok(());}
 				if uninstall_just_clicked {
-					operations::uninstall::uninstall(inner.clone(), Some(revit_path.clone()));
+					operations::uninstall::try_uninstall(inner.clone(), Some(revit_path.clone()), is_self_update)?;
 					break;
 				}
 			}
@@ -120,21 +120,23 @@ pub fn try_install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Op
 	
 	thread::sleep(Duration::SECOND);
 	
-	let mut inner_locked = inner.lock().map_err_string()?;
-	inner_locked.gui_elements.clear();
-	inner_locked.gui_elements.push(GuiElement::Header (String::from("Installing")));
-	inner_locked.gui_elements.push(GuiElement::Separator);
-	inner_locked.gui_elements.push(GuiElement::Label (String::from("Install finished successfully.")));
-	inner_locked.gui_elements.push(GuiElement::BottomElements (vec!(
-		GuiElement::Button {text: String::from("Close"), just_clicked: false},
-	)));
-	drop(inner_locked);
-	loop {
+	if !is_self_update {
 		let mut inner_locked = inner.lock().map_err_string()?;
-		let GuiElement::BottomElements (bottom_elements) = &mut inner_locked.gui_elements[3] else {return unsynced_err();};
-		let GuiElement::Button {just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
-		let just_clicked = mem::take(just_clicked);
-		if just_clicked {break;}
+		inner_locked.gui_elements.clear();
+		inner_locked.gui_elements.push(GuiElement::Header (String::from("Installing")));
+		inner_locked.gui_elements.push(GuiElement::Separator);
+		inner_locked.gui_elements.push(GuiElement::Label (String::from("Install finished successfully.")));
+		inner_locked.gui_elements.push(GuiElement::BottomElements (vec!(
+			GuiElement::Button {text: String::from("Close"), just_clicked: false},
+		)));
+		drop(inner_locked);
+		loop {
+			let mut inner_locked = inner.lock().map_err_string()?;
+			let GuiElement::BottomElements (bottom_elements) = &mut inner_locked.gui_elements[3] else {return unsynced_err();};
+			let GuiElement::Button {just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+			let just_clicked = mem::take(just_clicked);
+			if just_clicked {break;}
+		}
 	}
 	
 	Ok(())

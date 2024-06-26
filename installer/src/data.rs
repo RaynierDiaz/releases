@@ -32,6 +32,7 @@ impl App {
 impl eframe::App for App {
 	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 		let result = gui::app_update(self, ctx);
+		ctx.request_repaint();
 		if let Err(err) = result {
 			utils::fatal_error( format!("Fatal error while running installer: {err:#?}"));
 		}

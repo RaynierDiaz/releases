@@ -4,8 +4,8 @@ use utils::unsynced_err;
 
 
 
-pub fn uninstall(inner: Arc<Mutex<InnerApp>>, revit_path: Option<PathBuf>) -> Result<DidFinish<PathBuf>> {
-	match try_uninstall(inner.clone(), revit_path) {
+pub fn uninstall(inner: Arc<Mutex<InnerApp>>, revit_path: Option<PathBuf>, is_self_update: bool) -> Result<DidFinish<PathBuf>> {
+	match try_uninstall(inner.clone(), revit_path, is_self_update) {
 		StdResult::Ok(revit_dir) => Ok(Some(revit_dir)),
 		StdResult::Err(err) => {
 			background_thread::show_error_message(inner, &err)?;
@@ -16,7 +16,7 @@ pub fn uninstall(inner: Arc<Mutex<InnerApp>>, revit_path: Option<PathBuf>) -> Re
 
 
 
-pub fn try_uninstall(inner: Arc<Mutex<InnerApp>>, revit_path: Option<PathBuf>) -> Result<PathBuf> {
+pub fn try_uninstall(inner: Arc<Mutex<InnerApp>>, revit_path: Option<PathBuf>, is_self_update: bool) -> Result<PathBuf> {
 	
 	let revit_path = operations::get_revit_path::get_revit_path(inner.clone(), "Uninstall", revit_path)?;
 	
@@ -37,22 +37,24 @@ pub fn try_uninstall(inner: Arc<Mutex<InnerApp>>, revit_path: Option<PathBuf>) -
 		_ => return Err(Error::msg(format!("Unknown format version: {format_version}"))),
 	}
 	
-	let mut inner_locked = inner.lock().map_err_string()?;
-	inner_locked.gui_elements.clear();
-	inner_locked.gui_elements.push(GuiElement::Header (String::from("Uninstall")));
-	inner_locked.gui_elements.push(GuiElement::Separator);
-	inner_locked.gui_elements.push(GuiElement::Label (String::from("Uninstall finished successfully.")));
-	inner_locked.gui_elements.push(GuiElement::BottomElements (vec!(
-		GuiElement::Button {text: String::from("Close"), just_clicked: false},
-	)));
-	drop(inner_locked);
-	loop {
-		thread::sleep(Duration::from_millis(100));
+	if !is_self_update {
 		let mut inner_locked = inner.lock().map_err_string()?;
-		let GuiElement::BottomElements (bottom_elements) = &mut inner_locked.gui_elements[3] else {return unsynced_err();};
-		let GuiElement::Button {just_clicked: close_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
-		let close_just_clicked = mem::take(close_just_clicked);
-		if close_just_clicked {break;}
+		inner_locked.gui_elements.clear();
+		inner_locked.gui_elements.push(GuiElement::Header (String::from("Uninstall")));
+		inner_locked.gui_elements.push(GuiElement::Separator);
+		inner_locked.gui_elements.push(GuiElement::Label (String::from("Uninstall finished successfully.")));
+		inner_locked.gui_elements.push(GuiElement::BottomElements (vec!(
+			GuiElement::Button {text: String::from("Close"), just_clicked: false},
+		)));
+		drop(inner_locked);
+		loop {
+			thread::sleep(Duration::from_millis(100));
+			let mut inner_locked = inner.lock().map_err_string()?;
+			let GuiElement::BottomElements (bottom_elements) = &mut inner_locked.gui_elements[3] else {return unsynced_err();};
+			let GuiElement::Button {just_clicked: close_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+			let close_just_clicked = mem::take(close_just_clicked);
+			if close_just_clicked {break;}
+		}
 	}
 	
 	Ok(revit_path)
