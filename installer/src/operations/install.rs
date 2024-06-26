@@ -8,17 +8,13 @@ use smart_read::prelude::*;
 
 pub type InstallSucceeded = bool;
 
-pub fn install(is_offline: bool, revit_path: Option<PathBuf>, is_self_update: bool, commands: &Sender<GuiCommand>, results: Receiver<GuiResult>) -> Result<InstallSucceeded> {
+pub fn install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option<PathBuf>, is_self_update: bool) -> Result<InstallSucceeded> {
 	
 	const DEFAULT_REVIT_PATH: &str = "C:\\ProgramData\\Autodesk\\Revit";
 	let revit_path = revit_path.unwrap_or_else(|| PathBuf::from(DEFAULT_REVIT_PATH));
 	let revit_path = if revit_path.exists() {revit_path} else {
-		commands.send(GuiCommand::ChooseRevitPath)?;
-		let revit_path = match results.recv()? {
-			GuiResult::RevitPathChosen (v) => v,
-			result => return Err(Error::msg(format!("Invalid gui response: {result:?}"))),
-		};
-		revit_path
+		
+		todo!()
 	};
 	
 	// check if already installed

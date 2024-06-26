@@ -4,13 +4,11 @@ use egui::{Color32, Visuals};
 
 
 pub struct App {
-	pub state: AppState,
-	pub gui_commands: Receiver<GuiCommand>,
-	pub gui_results: Sender<GuiResult>,
+	pub inner: Arc<Mutex<InnerApp>>,
 }
 
 impl App {
-	pub fn new(cc: &eframe::CreationContext<'_>, gui_commands: Receiver<GuiCommand>, gui_results: Sender<GuiResult>) -> Self {
+	pub fn new(cc: &eframe::CreationContext<'_>, inner: Arc<Mutex<InnerApp>>) -> Self {
 		
 		let mut visuals = Visuals::light();
 		visuals.override_text_color = Some(Color32::from_gray(0));
@@ -22,11 +20,7 @@ impl App {
 		cc.egui_ctx.set_zoom_factor(1.333);
 		
 		Self {
-			state: AppState::ChooseAction {
-				selected_action: SelectedAction::Install,
-			},
-			gui_commands,
-			gui_results,
+			inner,
 		}
 	}
 }
@@ -42,11 +36,17 @@ impl eframe::App for App {
 
 
 
-pub enum AppState {
-	ChooseAction {selected_action: SelectedAction},
-	Installing (InstallingState),
-	Uninstalling,
-	WorkError (Error), // different from fatal error because a fatal error would force close the installer
+pub struct InnerApp {
+	pub gui_elements: Vec<GuiElement>,
+}
+
+pub enum GuiElement {
+	Header (String),
+	Separator,
+	Label (String),
+	Button {text: String, just_clicked: bool},
+	RadioButton {selected: Arc<Mutex<usize>>, value: usize, text: String},
+	BottomElements (Vec<GuiElement>),
 }
 
 

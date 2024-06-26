@@ -1,3 +1,4 @@
+use crate::prelude::*;
 use std::{ffi::OsStr, os::windows::ffi::OsStrExt, ptr::null_mut};
 use user32::MessageBoxW;
 use winapi::um::winuser::MB_OK;
@@ -24,4 +25,10 @@ pub fn show_message_box(title: impl AsRef<str>, message: impl AsRef<str>) {
 pub fn fatal_error(message: impl AsRef<str>) -> ! {
 	show_message_box("Error", &message);
 	panic!("{}", message.as_ref());
+}
+
+
+
+pub fn unsynced_err<T>() -> Result<T> {
+	Err(Error::msg("Ui layout is not synced with code layout"))
 }

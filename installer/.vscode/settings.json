@@ -7,12 +7,14 @@
 		"eframe",
 		"egui",
 		"errorlevel",
+		"impls",
 		"multisampling",
 		"nobreak",
 		"Raynier",
 		"reqwest",
 		"Revit",
 		"tasklist",
+		"unsynced",
 		"winapi",
 		"winuser"
 	]

@@ -14,8 +14,7 @@ pub mod settings {
 
 
 use crate::prelude::*;
-use std::{sync::mpsc::{channel, Receiver, Sender}, thread};
-use egui::{Layout, Vec2};
+use std::thread;
 
 
 
@@ -24,10 +23,11 @@ pub mod gui;
 pub mod background_thread;
 pub mod data;
 pub mod utils;
+pub mod custom_impls;
 
 pub mod prelude {
-	pub use crate::{*, data::*};
-	pub use std::{fs, path::{Path, PathBuf}};
+	pub use crate::{*, data::*, custom_impls::*};
+	pub use std::{fs, path::{Path, PathBuf}, sync::{Arc, Mutex}, rc::Rc, time::Duration};
 	pub use std::result::Result as StdResult;
 	pub use serde::{Serialize, Deserialize};
 	pub use anyhow::*;
@@ -45,10 +45,23 @@ fn main() {
 		return;
 	}
 	
-	let (commands_tx, commands_rx) = channel();
-	let (results_tx, results_rx) = channel();
+	let select_action_rc = Arc::new(Mutex::new(0));
+	let inner = Arc::new(Mutex::new(InnerApp {
+		gui_elements: vec!(
+			GuiElement::Header (String::from("Tupelo Workbench Installer")),
+			GuiElement::Separator,
+			GuiElement::Label (String::from("What would you like to do?")),
+			GuiElement::RadioButton {selected: select_action_rc.clone(), value: 0, text: String::from("Install (uses latest version)")},
+			GuiElement::RadioButton {selected: select_action_rc.clone(), value: 1, text: String::from("Offline Install")},
+			GuiElement::RadioButton {selected: select_action_rc.clone(), value: 2, text: String::from("Uninstall")},
+			GuiElement::BottomElements (vec!(
+				GuiElement::Button {text: String::from("Next"), just_clicked: false}
+			)),
+		),
+	}));
 	
-	thread::spawn(|| background_thread::run(commands_tx, results_rx));
+	let inner_clone = inner.clone();
+	thread::spawn(|| background_thread::run(inner_clone));
 	
 	let eframe_options = eframe::NativeOptions {
 		viewport: egui::ViewportBuilder::default()
@@ -64,7 +77,7 @@ fn main() {
 	let result = eframe::run_native(
 		"Tupelo Workbench Installer",
 		eframe_options,
-		Box::new(|cc| Box::new(App::new(cc, commands_rx, results_tx))),
+		Box::new(|cc| Box::new(App::new(cc, inner))),
 	);
 	if let Err(err) = result {
 		utils::fatal_error(format!("Fatal error while running installer: {err}"));
