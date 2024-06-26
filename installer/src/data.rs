@@ -5,10 +5,12 @@ use egui::{Color32, Visuals};
 
 pub struct App {
 	pub state: AppState,
+	pub gui_commands: Receiver<GuiCommand>,
+	pub gui_results: Sender<GuiResult>,
 }
 
 impl App {
-	pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+	pub fn new(cc: &eframe::CreationContext<'_>, gui_commands: Receiver<GuiCommand>, gui_results: Sender<GuiResult>) -> Self {
 		
 		let mut visuals = Visuals::light();
 		visuals.override_text_color = Some(Color32::from_gray(0));
@@ -23,6 +25,17 @@ impl App {
 			state: AppState::ChooseAction {
 				selected_action: SelectedAction::Install,
 			},
+			gui_commands,
+			gui_results,
+		}
+	}
+}
+
+impl eframe::App for App {
+	fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
+		let result = gui::app_update(self, ctx, frame);
+		if let Err(err) = result {
+			utils::fatal_error( format!("Fatal error while running installer: {err}"));
 		}
 	}
 }
@@ -31,8 +44,9 @@ impl App {
 
 pub enum AppState {
 	ChooseAction {selected_action: SelectedAction},
-	Installing {is_offline: bool},
+	Installing (InstallingState),
 	Uninstalling,
+	WorkError (Error), // different from fatal error because a fatal error would force close the installer
 }
 
 
@@ -42,6 +56,13 @@ pub enum SelectedAction {
 	Install,
 	OfflineInstall,
 	Uninstall,
+}
+
+
+
+pub enum InstallingState {
+	None,
+	ChooseRevitPath,
 }
 
 

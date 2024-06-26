@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use crate::operations::uninstallers;
+use smart_read::prelude::*;
 
 
 
@@ -7,7 +8,7 @@ pub type UninstallSucceeded = bool;
 
 pub fn uninstall(is_self_update: bool) -> (UninstallSucceeded, PathBuf) {
 	
-	let revit_dir = prompt!("Where is Revit located? "; ["C:\\ProgramData\\Autodesk\\Revit"] SimpleValidate (|input| {
+	let revit_path = prompt!("Where is Revit located? "; ["C:\\ProgramData\\Autodesk\\Revit"] SimpleValidate (|input| {
 		println!("Testing: '{input}'");
 		if PathBuf::from(input).exists() {
 			StdResult::Ok(())
@@ -15,27 +16,27 @@ pub fn uninstall(is_self_update: bool) -> (UninstallSucceeded, PathBuf) {
 			StdResult::Err(String::from("That path does not exist"))
 		}
 	}));
-	let revit_dir = PathBuf::from(revit_dir);
+	let revit_path = PathBuf::from(revit_path);
 	
-	let format_version = match get_format_version(&revit_dir) {
+	let format_version = match get_format_version(&revit_path) {
 		StdResult::Ok(v) => v,
 		StdResult::Err(err) => {
 			prompt!(format!("Error while uninstalling, please contact Tupelo Workbench with this message: {err:?} "));
-			return (false, revit_dir);
+			return (false, revit_path);
 		}
 	};
 	
 	let result = match format_version {
-		1 => uninstallers::uninstall_format_1::uninstall(&revit_dir),
-		2 => uninstallers::uninstall_format_2::uninstall(&revit_dir),
-		3 => uninstallers::uninstall_format_3::uninstall(&revit_dir),
+		1 => uninstallers::uninstall_format_1::uninstall(&revit_path),
+		2 => uninstallers::uninstall_format_2::uninstall(&revit_path),
+		3 => uninstallers::uninstall_format_3::uninstall(&revit_path),
 		_ => Err(Error::msg(format!("Unknown format version: {format_version}"))),
 	};
 	let uninstall_succeeded = match result {
 		StdResult::Ok(v) => v,
 		StdResult::Err(err) => {
 			prompt!(format!("Error while uninstalling, please contact Tupelo Workbench with this message: {err:?} "));
-			return (false, revit_dir);
+			return (false, revit_path);
 		}
 	};
 	
@@ -43,14 +44,14 @@ pub fn uninstall(is_self_update: bool) -> (UninstallSucceeded, PathBuf) {
 		prompt!("Uninstall successful, press enter to close the installer");
 	}
 	
-	(true, revit_dir)
+	(true, revit_path)
 }
 
 
 
-pub fn get_format_version(revit_dir: &Path) -> Result<usize> {
+pub fn get_format_version(revit_path: &Path) -> Result<usize> {
 	let addin_file_path = 'addin_path: {
-		for entry in fs::read_dir(revit_dir.join("Addins"))? {
+		for entry in fs::read_dir(revit_path.join("Addins"))? {
 			let StdResult::Ok(entry) = entry else {continue;};
 			let entry = entry.path();
 			let addin_file_path = entry.join("TupeloWorkbench.addin");

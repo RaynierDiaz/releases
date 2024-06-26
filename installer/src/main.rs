@@ -1,3 +1,8 @@
+#![warn(clippy::all)]
+#![feature(duration_constants)]
+
+
+
 pub mod settings {
 	pub const REPO_OWNER: &str = "RaynierDiaz";
 	pub const REPO_NAME: &str = "releases";
@@ -8,13 +13,15 @@ pub mod settings {
 
 
 
-use egui::{Layout, Vec2};
-
 use crate::prelude::*;
+use std::{sync::mpsc::{channel, Receiver, Sender}, thread};
+use egui::{Layout, Vec2};
 
 
 
 pub mod operations;
+pub mod gui;
+pub mod background_thread;
 pub mod data;
 pub mod utils;
 
@@ -24,7 +31,6 @@ pub mod prelude {
 	pub use std::result::Result as StdResult;
 	pub use serde::{Serialize, Deserialize};
 	pub use anyhow::*;
-	pub use smart_read::prelude::*;
 }
 
 
@@ -38,6 +44,11 @@ fn main() {
 		operations::self_update::self_update();
 		return;
 	}
+	
+	let (commands_tx, commands_rx) = channel();
+	let (results_tx, results_rx) = channel();
+	
+	thread::spawn(|| background_thread::run(commands_tx, results_rx));
 	
 	let eframe_options = eframe::NativeOptions {
 		viewport: egui::ViewportBuilder::default()
@@ -53,62 +64,33 @@ fn main() {
 	let result = eframe::run_native(
 		"Tupelo Workbench Installer",
 		eframe_options,
-		Box::new(|cc| Box::new(App::new(cc))),
+		Box::new(|cc| Box::new(App::new(cc, commands_rx, results_tx))),
 	);
 	if let Err(err) = result {
-		utils::show_message_box("Error", format!("Fatal error while running installer: {err}"));
+		utils::fatal_error(format!("Fatal error while running installer: {err}"));
 	}
 	
 }
 
 
 
-impl eframe::App for App {
-	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-		match &mut self.state {
-			
-			AppState::ChooseAction {selected_action} => {
-				
-				let mut new_state = None;
-				egui::CentralPanel::default().show(ctx, |ui| {
-					
-					ui.spacing_mut().item_spacing.y = 5.0;
-					ui.heading("Tupelo Workbench Installer");
-					ui.spacing_mut().item_spacing.y = 15.0;
-					ui.separator();
-					ui.label("What would you like to do?");
-					ui.spacing_mut().item_spacing.y = 5.0;
-					ui.radio_value(selected_action, SelectedAction::Install, "Install");
-					ui.radio_value(selected_action, SelectedAction::OfflineInstall, "Offline Install");
-					ui.radio_value(selected_action, SelectedAction::Uninstall, "Uninstall");
-					
-					ui.with_layout(Layout::bottom_up(egui::Align::Max), |ui| {
-						ui.spacing_mut().item_spacing.x = 20.0;
-						ui.spacing_mut().item_spacing.y = 20.0;
-						if ui.add_sized(Vec2::new(90.0, 35.0), egui::Button::new("Start")).clicked() {
-							new_state = Some(match selected_action {
-								SelectedAction::Install => AppState::Installing {is_offline: false},
-								SelectedAction::OfflineInstall => AppState::Installing {is_offline: true},
-								SelectedAction::Uninstall => AppState::Uninstalling,
-							});
-						}
-					})
-					
-				});
-				
-				if let Some(new_state) = new_state {
-					self.state = new_state;
-				}
-			}
-			
-			AppState::Installing {is_offline} => {
-				
-			}
-			
-			AppState::Uninstalling => {
-				
-			}
-			
-		}
-	}
+pub enum GuiCommand {
+	
+	ShowWorkError (Error),
+	
+	GoToInstalling,
+	ChooseRevitPath,
+	
+	GoToUninstalling,
+	
+}
+
+#[derive(Debug)]
+pub enum GuiResult {
+	
+	StartInstall {is_offline: bool},
+	RevitPathChosen (PathBuf),
+	
+	StartUninstall,
+	
 }

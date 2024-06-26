@@ -2,38 +2,37 @@ use crate::prelude::*;
 use reqwest::blocking::Client;
 use zip::ZipArchive;
 use std::io::{Cursor, Read};
+use smart_read::prelude::*;
 
 
 
 pub type InstallSucceeded = bool;
 
-pub fn install(is_offline: bool, revit_dir: Option<PathBuf>, is_self_update: bool) -> InstallSucceeded {
+pub fn install(is_offline: bool, revit_path: Option<PathBuf>, is_self_update: bool, commands: &Sender<GuiCommand>, results: Receiver<GuiResult>) -> Result<InstallSucceeded> {
 	
-	// get revit dir
-	let revit_dir = revit_dir.unwrap_or_else(|| {
-		let revit_dir_string = prompt!("Where is Revit located? "; ["C:\\ProgramData\\Autodesk\\Revit"] SimpleValidate (|input| {
-			println!("Testing: '{input}'");
-			if PathBuf::from(input).exists() {
-				StdResult::Ok(())
-			} else {
-				StdResult::Err(String::from("That path does not exist"))
-			}
-		}));
-		PathBuf::from(revit_dir_string)
-	});
+	const DEFAULT_REVIT_PATH: &str = "C:\\ProgramData\\Autodesk\\Revit";
+	let revit_path = revit_path.unwrap_or_else(|| PathBuf::from(DEFAULT_REVIT_PATH));
+	let revit_path = if revit_path.exists() {revit_path} else {
+		commands.send(GuiCommand::ChooseRevitPath)?;
+		let revit_path = match results.recv()? {
+			GuiResult::RevitPathChosen (v) => v,
+			result => return Err(Error::msg(format!("Invalid gui response: {result:?}"))),
+		};
+		revit_path
+	};
 	
 	// check if already installed
-	match check_already_installed(&revit_dir) {
+	match check_already_installed(&revit_path) {
 		StdResult::Ok(true) => {
 			prompt!("Error: extension is already installed. Please uninstall before attempting to install / update. ");
-			return false;
+			return Ok(false);
 		}
 		StdResult::Ok(false) => {}
 		StdResult::Err(err) => {
 			let should_continue = prompt!(format!("Warning: failed to check if extension is already installed (error: {err:?}), do you want to continue with installation? "); YesNoInput);
 			if !should_continue {
 				prompt!("Affirmed, canceling install. ");
-				return false;
+				return Ok(false);
 			}
 		}
 	}
@@ -50,7 +49,7 @@ pub fn install(is_offline: bool, revit_dir: Option<PathBuf>, is_self_update: boo
 			StdResult::Ok(v) => v,
 			StdResult::Err(err) => {
 				prompt!(format!("Failed to download assets from GitHub. Please contact Tupelo Workbench with this error message: {err:?} "));
-				return false;
+				return Ok(false);
 			}
 		};
 		println!("Done.");
@@ -65,7 +64,7 @@ pub fn install(is_offline: bool, revit_dir: Option<PathBuf>, is_self_update: boo
 		StdResult::Ok(v) => v,
 		StdResult::Err(err) => {
 			prompt!(format!("Failed to parse downloaded assets. Please contact Tupelo Workbench with this error message: {err:?} "));
-			return false;
+			return Ok(false);
 		}
 	};
 	
@@ -78,12 +77,12 @@ pub fn install(is_offline: bool, revit_dir: Option<PathBuf>, is_self_update: boo
 	};
 	if version != settings::LATEST_ASSETS_VERSION {
 		prompt!(format!("Installer is out of date, please re-download installer to continue. If this is the latest version, please submit a bug report (https://github.com/{}/{}/issues). ", settings::REPO_OWNER, settings::REPO_NAME));
-		return false;
+		return Ok(false);
 	}
 	
-	if let Err(err) = write_files(&mut zip_data, &revit_dir) {
+	if let Err(err) = write_files(&mut zip_data, &revit_path) {
 		prompt!(format!("Failed to write extension files. Please contact Tupelo Workbench with this error message: {err:?} "));
-		return false;
+		return Ok(false);
 	}
 	
 	println!("Done.");
@@ -92,13 +91,13 @@ pub fn install(is_offline: bool, revit_dir: Option<PathBuf>, is_self_update: boo
 		prompt!("Install successful, press enter to close the installer");
 	}
 	
-	true
+	Ok(true)
 }
 
 
 
-pub fn check_already_installed(revit_dir: &Path) -> Result<bool> {
-	let addins_folder = revit_dir.join("Addins");
+pub fn check_already_installed(revit_path: &Path) -> Result<bool> {
+	let addins_folder = revit_path.join("Addins");
 	for child in fs::read_dir(&addins_folder)? {
 		let StdResult::Ok(child) = child else {
 			println!("Warning: failed to read a child of {addins_folder:?}");
@@ -179,8 +178,8 @@ pub fn get_file_bytes(zip_data: &mut ZipArchive<Cursor<&[u8]>>, file_name: &'sta
 
 
 
-pub fn write_files(zip_data: &mut ZipArchive<Cursor<&[u8]>>, revit_dir: &Path) -> Result<()> {
-	let ext_dir = revit_dir.join("Tupelo Workbench");
+pub fn write_files(zip_data: &mut ZipArchive<Cursor<&[u8]>>, revit_path: &Path) -> Result<()> {
+	let ext_dir = revit_path.join("Tupelo Workbench");
 	
 	// dlls
 	fs::create_dir_all(&ext_dir).context(format!("Attempted to create folders at {ext_dir:?}"))?;
@@ -198,7 +197,7 @@ pub fn write_files(zip_data: &mut ZipArchive<Cursor<&[u8]>>, revit_dir: &Path) -
 	fs::write(&readme_path, readme_file_contents).context(format!("Attempted to write file {readme_path:?}"))?;
 	
 	// .addin
-	let addins_folder = revit_dir.join("Addins");
+	let addins_folder = revit_path.join("Addins");
 	let addin_file_contents = get_file_text(zip_data, "TupeloWorkbench.addin")?;
 	let addin_file_contents = addin_file_contents.replace("EXTENSION_DIR", ext_dir.to_str().unwrap());
 	

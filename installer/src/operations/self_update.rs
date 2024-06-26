@@ -5,11 +5,12 @@ use smart_read::prelude::*;
 pub fn self_update() {
 	
 	// uninstall
-	let (uninstall_succeeded, revit_dir)  = crate::operations::uninstall::uninstall(true);
+	let (uninstall_succeeded, revit_path)  = crate::operations::uninstall::uninstall(true);
 	if !uninstall_succeeded {return;}
 	
 	// reinstall
-	crate::operations::install::install(true, Some(revit_dir), true);
+	todo!();
+	// crate::operations::install::install(true, Some(revit_path), true);
 	
 	// delete self
 	if let Err(err) = self_replace::self_delete() {

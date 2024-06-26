@@ -1,11 +1,12 @@
 use crate::prelude::*;
 use crate::operations::uninstall::UninstallSucceeded;
+use smart_read::prelude::*;
 
 
 
-pub fn uninstall(revit_dir: &Path) -> Result<UninstallSucceeded> {
+pub fn uninstall(revit_path: &Path) -> Result<UninstallSucceeded> {
 	
-	let did_delete_extension_folder = match delete_extension_folder(revit_dir) {
+	let did_delete_extension_folder = match delete_extension_folder(revit_path) {
 		StdResult::Ok(v) => v,
 		StdResult::Err(err) => {
 			prompt!(format!("Failed to delete extension folder, usually located at C:\\ProgramData\\TupeloWorkbenchExt. Please contact Tupelo Workbench with this error message: {err:?}. "));
@@ -20,7 +21,7 @@ pub fn uninstall(revit_dir: &Path) -> Result<UninstallSucceeded> {
 		}
 		println!("Affirmed, continuing uninstall...");
 	}
-	if let Err(err) = delete_addin_files(revit_dir) {
+	if let Err(err) = delete_addin_files(revit_path) {
 		prompt!(format!("Failed to delete addin files, usually located at C:\\ProgramData\\Autodesk\\Revit\\Addins\\___\\TupeloWorkbench.addin. Please contact Tupelo Workbench with this error message: {err:?} "));
 		return Ok(false);
 	}
@@ -32,10 +33,10 @@ pub fn uninstall(revit_dir: &Path) -> Result<UninstallSucceeded> {
 
 pub type DidDeleteExtensionFolder = bool;
 
-pub fn delete_extension_folder(revit_dir: &Path) -> Result<DidDeleteExtensionFolder> {
+pub fn delete_extension_folder(revit_path: &Path) -> Result<DidDeleteExtensionFolder> {
 	
 	// read addins file
-	let addins_path = revit_dir.join("Addins");
+	let addins_path = revit_path.join("Addins");
 	let addin_file_path =
 		fs::read_dir(&addins_path).context(format!("Attempted to read contents of {addins_path:?}"))?
 		.find(|entry| {
@@ -84,9 +85,9 @@ pub fn delete_extension_folder(revit_dir: &Path) -> Result<DidDeleteExtensionFol
 
 
 
-pub fn delete_addin_files(revit_dir: &Path) -> Result<()> {
+pub fn delete_addin_files(revit_path: &Path) -> Result<()> {
 	println!("Removing .addin files...");
-	let addins_path = revit_dir.join("Addins");
+	let addins_path = revit_path.join("Addins");
 	for entry in fs::read_dir(&addins_path).context(format!("Attempted to read contents of {addins_path:?}"))? {
 		let StdResult::Ok(entry) = entry else {continue;};
 		let addin_file_path = entry.path().join("TupeloWorkbench.addin");

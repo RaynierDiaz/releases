@@ -7,6 +7,7 @@
 		"eframe",
 		"egui",
 		"errorlevel",
+		"multisampling",
 		"nobreak",
 		"Raynier",
 		"reqwest",

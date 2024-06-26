@@ -20,3 +20,8 @@ pub fn show_message_box(title: impl AsRef<str>, message: impl AsRef<str>) {
 		);
 	}
 }
+
+pub fn fatal_error(message: impl AsRef<str>) -> ! {
+	show_message_box("Error", &message);
+	panic!("{}", message.as_ref());
+}
