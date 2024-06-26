@@ -29,7 +29,7 @@ impl eframe::App for App {
 	fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
 		let result = gui::app_update(self, ctx, frame);
 		if let Err(err) = result {
-			utils::fatal_error( format!("Fatal error while running installer: {err}"));
+			utils::fatal_error( format!("Fatal error while running installer: {err:#?}"));
 		}
 	}
 }
@@ -38,12 +38,15 @@ impl eframe::App for App {
 
 pub struct InnerApp {
 	pub gui_elements: Vec<GuiElement>,
+	pub should_close: bool,
+	pub is_self_update: bool,
 }
 
 pub enum GuiElement {
 	Header (String),
 	Separator,
 	Label (String),
+	TextBox (String),
 	Button {text: String, just_clicked: bool},
 	RadioButton {selected: Arc<Mutex<usize>>, value: usize, text: String},
 	BottomElements (Vec<GuiElement>),

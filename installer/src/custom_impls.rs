@@ -9,6 +9,6 @@ pub trait StdResultFns<T> {
 
 impl<T, E: Debug> StdResultFns<T> for StdResult<T, E> {
 	fn map_err_string(self) -> Result<T> {
-		self.map_err(|err| Error::msg(format!("{err:?}")))
+		self.map_err(|err| Error::msg(format!("{err:#?}")))
 	}
 }

@@ -4,10 +4,13 @@ use egui::{Layout, Ui, Vec2};
 
 
 pub fn app_update(app: &mut App, ctx: &egui::Context, _frame: &mut eframe::Frame) -> Result<()> {
-	let mut inner = app.inner.lock().map_err_string()?;
+	let mut inner_locked = app.inner.lock().map_err_string()?;
+	if inner_locked.should_close {
+		ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+	}
 	let result = egui::CentralPanel::default().show(ctx, |ui| {
 		ui.spacing_mut().item_spacing.y = 5.0;
-		for gui_element in &mut inner.gui_elements {
+		for gui_element in &mut inner_locked.gui_elements {
 			draw_gui_element(gui_element, ui)?;
 		}
 		Ok(())
@@ -31,6 +34,8 @@ pub fn draw_gui_element(gui_element: &mut GuiElement, ui: &mut Ui) -> Result<()>
 		
 		GuiElement::Label (text) => {let _ = ui.label(&**text);}
 		
+		GuiElement::TextBox (text) => {let _ = ui.text_edit_singleline(text);}
+		
 		GuiElement::Button {text, just_clicked: was_clicked} => {
 			ui.spacing_mut().item_spacing.x = 20.0;
 			ui.spacing_mut().item_spacing.y = 20.0;
@@ -45,7 +50,7 @@ pub fn draw_gui_element(gui_element: &mut GuiElement, ui: &mut Ui) -> Result<()>
 		}
 		
 		GuiElement::BottomElements (elements) => {
-			let result = ui.with_layout(Layout::bottom_up(egui::Align::Max), |ui| {
+			let result = ui.with_layout(Layout::right_to_left(egui::Align::Max), |ui| {
 				for gui_element in elements {
 					draw_gui_element(gui_element, ui)?;
 				}

@@ -27,7 +27,7 @@ pub mod custom_impls;
 
 pub mod prelude {
 	pub use crate::{*, data::*, custom_impls::*};
-	pub use std::{fs, path::{Path, PathBuf}, sync::{Arc, Mutex}, rc::Rc, time::Duration};
+	pub use std::{mem, fs, path::{Path, PathBuf}, sync::{Arc, Mutex}, rc::Rc, time::Duration};
 	pub use std::result::Result as StdResult;
 	pub use serde::{Serialize, Deserialize};
 	pub use anyhow::*;
@@ -40,10 +40,7 @@ fn main() {
 	let mut args = std::env::args();
 	args.next();
 	let first_arg = args.next();
-	if first_arg.as_deref() == Some("--self-update") {
-		operations::self_update::self_update();
-		return;
-	}
+	let is_self_update = first_arg.as_deref() == Some("--self-update");
 	
 	let select_action_rc = Arc::new(Mutex::new(0));
 	let inner = Arc::new(Mutex::new(InnerApp {
@@ -58,6 +55,8 @@ fn main() {
 				GuiElement::Button {text: String::from("Next"), just_clicked: false}
 			)),
 		),
+		should_close: false,
+		is_self_update,
 	}));
 	
 	let inner_clone = inner.clone();
@@ -80,30 +79,7 @@ fn main() {
 		Box::new(|cc| Box::new(App::new(cc, inner))),
 	);
 	if let Err(err) = result {
-		utils::fatal_error(format!("Fatal error while running installer: {err}"));
+		utils::fatal_error(format!("Fatal error while running installer: {err:#?}"));
 	}
-	
-}
-
-
-
-pub enum GuiCommand {
-	
-	ShowWorkError (Error),
-	
-	GoToInstalling,
-	ChooseRevitPath,
-	
-	GoToUninstalling,
-	
-}
-
-#[derive(Debug)]
-pub enum GuiResult {
-	
-	StartInstall {is_offline: bool},
-	RevitPathChosen (PathBuf),
-	
-	StartUninstall,
 	
 }

@@ -6,25 +6,15 @@ use smart_read::prelude::*;
 
 pub type UninstallSucceeded = bool;
 
-pub fn uninstall(is_self_update: bool) -> (UninstallSucceeded, PathBuf) {
+pub fn uninstall(inner: Arc<Mutex<InnerApp>>, is_self_update: bool, revit_path: Option<PathBuf>) -> Result<(UninstallSucceeded, PathBuf)> {
 	
-	let revit_path = prompt!("Where is Revit located? "; ["C:\\ProgramData\\Autodesk\\Revit"] SimpleValidate (|input| {
-		println!("Testing: '{input}'");
-		if PathBuf::from(input).exists() {
-			StdResult::Ok(())
-		} else {
-			StdResult::Err(String::from("That path does not exist"))
-		}
-	}));
-	let revit_path = PathBuf::from(revit_path);
-	
-	let format_version = match get_format_version(&revit_path) {
-		StdResult::Ok(v) => v,
-		StdResult::Err(err) => {
-			prompt!(format!("Error while uninstalling, please contact Tupelo Workbench with this message: {err:?} "));
-			return (false, revit_path);
-		}
+	const DEFAULT_REVIT_PATH: &str = "C:\\ProgramData\\Autodesk\\Revit";
+	let revit_path = revit_path.unwrap_or_else(|| PathBuf::from(DEFAULT_REVIT_PATH));
+	let revit_path = if revit_path.exists() && revit_path.join("Addins").exists() {revit_path} else {
+		operations::get_revit_path::get_revit_path(inner.clone(), "Uninstall")?
 	};
+	
+	let format_version = get_format_version(&revit_path)?;
 	
 	let result = match format_version {
 		1 => uninstallers::uninstall_format_1::uninstall(&revit_path),
@@ -32,19 +22,13 @@ pub fn uninstall(is_self_update: bool) -> (UninstallSucceeded, PathBuf) {
 		3 => uninstallers::uninstall_format_3::uninstall(&revit_path),
 		_ => Err(Error::msg(format!("Unknown format version: {format_version}"))),
 	};
-	let uninstall_succeeded = match result {
-		StdResult::Ok(v) => v,
-		StdResult::Err(err) => {
-			prompt!(format!("Error while uninstalling, please contact Tupelo Workbench with this message: {err:?} "));
-			return (false, revit_path);
-		}
-	};
+	let uninstall_succeeded = result?;
 	
 	if !is_self_update && uninstall_succeeded {
 		prompt!("Uninstall successful, press enter to close the installer");
 	}
 	
-	(true, revit_path)
+	Ok((true, revit_path))
 }
 
 

@@ -1,34 +1,74 @@
 use crate::prelude::*;
 use reqwest::blocking::Client;
+use utils::unsynced_err;
 use zip::ZipArchive;
 use std::io::{Cursor, Read};
-use smart_read::prelude::*;
 
 
 
-pub type InstallSucceeded = bool;
-
-pub fn install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option<PathBuf>, is_self_update: bool) -> Result<InstallSucceeded> {
+pub fn install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option<PathBuf>) -> Result<()> {
 	
+	// get revit path
 	const DEFAULT_REVIT_PATH: &str = "C:\\ProgramData\\Autodesk\\Revit";
 	let revit_path = revit_path.unwrap_or_else(|| PathBuf::from(DEFAULT_REVIT_PATH));
-	let revit_path = if revit_path.exists() {revit_path} else {
-		
-		todo!()
+	let revit_path = if revit_path.exists() && revit_path.join("Addins").exists() {revit_path} else {
+		operations::get_revit_path::get_revit_path(inner.clone(), "Install")?
 	};
 	
 	// check if already installed
 	match check_already_installed(&revit_path) {
 		StdResult::Ok(true) => {
-			prompt!("Error: extension is already installed. Please uninstall before attempting to install / update. ");
-			return Ok(false);
+			let mut inner_locked = inner.lock().map_err_string()?;
+			inner_locked.gui_elements.clear();
+			inner_locked.gui_elements.push(GuiElement::Header (String::from("Installing")));
+			inner_locked.gui_elements.push(GuiElement::Separator);
+			inner_locked.gui_elements.push(GuiElement::Label (String::from("Error: cannot install addin because it is already installed.")));
+			inner_locked.gui_elements.push(GuiElement::Label (String::from("Please uninstall before continuing.")));
+			inner_locked.gui_elements.push(GuiElement::BottomElements (vec!(
+				GuiElement::Button {text: String::from("Uninstall"), just_clicked: false},
+				GuiElement::Button {text: String::from("Exit"), just_clicked: false},
+			)));
+			drop(inner_locked);
+			loop {
+				thread::sleep(Duration::from_millis(100));
+				let mut inner_locked = inner.lock().map_err_string()?;
+				let GuiElement::BottomElements (bottom_elements) = &mut inner_locked.gui_elements[4] else {return unsynced_err();};
+				let GuiElement::Button {just_clicked: uninstall_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+				let uninstall_just_clicked = mem::take(uninstall_just_clicked);
+				let GuiElement::Button {just_clicked: exit_just_clicked, ..} = &mut bottom_elements[1] else {return unsynced_err();};
+				let exit_just_clicked = mem::take(exit_just_clicked);
+				drop(inner_locked);
+				if exit_just_clicked {return Ok(());}
+				if uninstall_just_clicked {
+					operations::uninstall::uninstall(inner.clone(), false, Some(revit_path.clone()))?;
+					break;
+				}
+			}
 		}
 		StdResult::Ok(false) => {}
 		StdResult::Err(err) => {
-			let should_continue = prompt!(format!("Warning: failed to check if extension is already installed (error: {err:?}), do you want to continue with installation? "); YesNoInput);
-			if !should_continue {
-				prompt!("Affirmed, canceling install. ");
-				return Ok(false);
+			let mut inner_locked = inner.lock().map_err_string()?;
+			inner_locked.gui_elements.clear();
+			inner_locked.gui_elements.push(GuiElement::Header (String::from("Installing")));
+			inner_locked.gui_elements.push(GuiElement::Separator);
+			inner_locked.gui_elements.push(GuiElement::Label (String::from("Error: failed to check if this addin is already installed. Continue anyways?")));
+			inner_locked.gui_elements.push(GuiElement::Label (format!("Please give Tupelo Workbench this error message: {err:#?}")));
+			inner_locked.gui_elements.push(GuiElement::BottomElements (vec!(
+				GuiElement::Button {text: String::from("Continue"), just_clicked: false},
+				GuiElement::Button {text: String::from("Exit"), just_clicked: false},
+			)));
+			drop(inner_locked);
+			loop {
+				thread::sleep(Duration::from_millis(100));
+				let mut inner_locked = inner.lock().map_err_string()?;
+				let GuiElement::BottomElements (bottom_elements) = &mut inner_locked.gui_elements[4] else {return unsynced_err();};
+				let GuiElement::Button {just_clicked: continue_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+				let continue_just_clicked = mem::take(continue_just_clicked);
+				let GuiElement::Button {just_clicked: exit_just_clicked, ..} = &mut bottom_elements[1] else {return unsynced_err();};
+				let exit_just_clicked = mem::take(exit_just_clicked);
+				drop(inner_locked);
+				if exit_just_clicked {return Ok(());}
+				if continue_just_clicked {break;}
 			}
 		}
 	}
@@ -40,54 +80,57 @@ pub fn install(inner: Arc<Mutex<InnerApp>>, is_offline: bool, revit_path: Option
 		const ASSETS_DATA: &[u8] = include_bytes!("../Assets.zip");
 		ASSETS_DATA
 	} else {
-		println!("Downloading assets...");
-		let assets = match download_assets() {
-			StdResult::Ok(v) => v,
-			StdResult::Err(err) => {
-				prompt!(format!("Failed to download assets from GitHub. Please contact Tupelo Workbench with this error message: {err:?} "));
-				return Ok(false);
-			}
-		};
-		println!("Done.");
+		let mut inner_locked = inner.lock().map_err_string()?;
+		inner_locked.gui_elements.clear();
+		inner_locked.gui_elements.push(GuiElement::Header (String::from("Installing")));
+		inner_locked.gui_elements.push(GuiElement::Separator);
+		inner_locked.gui_elements.push(GuiElement::Label (String::from("Downloading assets, please wait...")));
+		drop(inner_locked);
+		let assets = download_assets()?;
+		thread::sleep(Duration::SECOND);
 		assets_owned = assets;
 		&assets_owned
 	};
 	
-	println!("Installing...");
+	let mut inner_locked = inner.lock().map_err_string()?;
+	inner_locked.gui_elements.clear();
+	inner_locked.gui_elements.push(GuiElement::Header (String::from("Installing")));
+	inner_locked.gui_elements.push(GuiElement::Separator);
+	inner_locked.gui_elements.push(GuiElement::Label (String::from("Installing, please wait...")));
+	drop(inner_locked);
 	
 	let zip_cursor = Cursor::new(assets);
-	let mut zip_data = match ZipArchive::new(zip_cursor) {
-		StdResult::Ok(v) => v,
-		StdResult::Err(err) => {
-			prompt!(format!("Failed to parse downloaded assets. Please contact Tupelo Workbench with this error message: {err:?} "));
-			return Ok(false);
-		}
-	};
+	let mut zip_data = ZipArchive::new(zip_cursor)?;
 	
-	let version = match get_format_version(&mut zip_data) {
-		StdResult::Ok(v) => v,
-		StdResult::Err(err) => {
-			prompt!(format!("Failed to retrieve assets version, attempting to continue...  (error message: {err:?}) "));
-			settings::LATEST_ASSETS_VERSION
-		}
-	};
+	let version = get_format_version(&mut zip_data).unwrap_or(settings::LATEST_ASSETS_VERSION);
 	if version != settings::LATEST_ASSETS_VERSION {
-		prompt!(format!("Installer is out of date, please re-download installer to continue. If this is the latest version, please submit a bug report (https://github.com/{}/{}/issues). ", settings::REPO_OWNER, settings::REPO_NAME));
-		return Ok(false);
+		return Err(Error::msg(format!("Installer is out of date, please re-download installer to continue. If this is the latest version, please submit a bug report (https://github.com/{}/{}/issues). ", settings::REPO_OWNER, settings::REPO_NAME)));
 	}
 	
 	if let Err(err) = write_files(&mut zip_data, &revit_path) {
-		prompt!(format!("Failed to write extension files. Please contact Tupelo Workbench with this error message: {err:?} "));
-		return Ok(false);
+		return Err(Error::msg(format!("Failed to write extension files. Please contact Tupelo Workbench with this error message: {err:#?} ")));
 	}
 	
-	println!("Done.");
+	thread::sleep(Duration::SECOND);
 	
-	if !is_self_update {
-		prompt!("Install successful, press enter to close the installer");
+	let mut inner_locked = inner.lock().map_err_string()?;
+	inner_locked.gui_elements.clear();
+	inner_locked.gui_elements.push(GuiElement::Header (String::from("Installing")));
+	inner_locked.gui_elements.push(GuiElement::Separator);
+	inner_locked.gui_elements.push(GuiElement::Label (String::from("Install finished successfully.")));
+	inner_locked.gui_elements.push(GuiElement::BottomElements (vec!(
+		GuiElement::Button {text: String::from("Close"), just_clicked: false},
+	)));
+	drop(inner_locked);
+	loop {
+		let mut inner_locked = inner.lock().map_err_string()?;
+		let GuiElement::BottomElements (bottom_elements) = &mut inner_locked.gui_elements[3] else {return unsynced_err();};
+		let GuiElement::Button {just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+		let just_clicked = mem::take(just_clicked);
+		if just_clicked {break;}
 	}
 	
-	Ok(true)
+	Ok(())
 }
 
 
