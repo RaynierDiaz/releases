@@ -70,7 +70,7 @@ pub fn delete_addin_files(inner: Arc<Mutex<InnerApp>>, revit_path: &Path) -> Res
 	inner_locked.gui_elements.clear();
 	inner_locked.gui_elements.push(GuiElement::Header (String::from("Uninstall")));
 	inner_locked.gui_elements.push(GuiElement::Separator);
-	inner_locked.gui_elements.push(GuiElement::Label (String::from("Removing addin files...")));
+	inner_locked.gui_elements.push(GuiElement::Label (String::from("Removing .addin files...")));
 	drop(inner_locked);
 	thread::sleep(Duration::SECOND);
 	

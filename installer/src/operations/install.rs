@@ -247,7 +247,7 @@ pub fn write_files(zip_data: &mut ZipArchive<Cursor<&[u8]>>, revit_path: &Path) 
 	// .addin
 	let addins_folder = revit_path.join("Addins");
 	let addin_file_contents = get_file_text(zip_data, "TupeloWorkbench.addin")?;
-	let addin_file_contents = addin_file_contents.replace("addin_DIR", ext_dir.to_str().unwrap());
+	let addin_file_contents = addin_file_contents.replace("EXTENSION_DIR", ext_dir.to_str().unwrap());
 	
 	for child in fs::read_dir(&addins_folder)? {
 		let StdResult::Ok(child) = child else {
