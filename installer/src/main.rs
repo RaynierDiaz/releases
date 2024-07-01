@@ -8,8 +8,6 @@
 pub mod settings {
 	pub const REPO_OWNER: &str = "RaynierDiaz";
 	pub const REPO_NAME: &str = "releases";
-	pub const ASSETS_NAME: &str = "Assets.zip";
-	pub const INSTALLER_NAME: &str = "Installer.exe";
 	pub const LATEST_ASSETS_VERSION: usize = 3;
 }
 

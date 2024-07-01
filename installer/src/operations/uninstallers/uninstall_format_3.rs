@@ -1,9 +1,12 @@
 use crate::prelude::*;
+use sysinfo::System;
 use utils::unsynced_err;
 
 
 
 pub fn uninstall(inner: Arc<Mutex<InnerApp>>, revit_path: &Path) -> Result<()> {
+	
+	wait_for_revit_close(inner.clone())?;
 	
 	let result = delete_addin_folder(inner.clone(), revit_path);
 	if let Err(err) = result {
@@ -16,6 +19,25 @@ pub fn uninstall(inner: Arc<Mutex<InnerApp>>, revit_path: &Path) -> Result<()> {
 	}
 	
 	Ok(())
+}
+
+
+
+pub fn wait_for_revit_close(inner: Arc<Mutex<InnerApp>>) -> Result<()> {
+	if !is_revit_running() {return Ok(());}
+	let mut inner_locked = inner.lock().map_err_string()?;
+	inner_locked.gui_elements.clear();
+	inner_locked.gui_elements.push(GuiElement::Header (String::from("Waiting for Revit to close...")));
+	inner_locked.gui_elements.push(GuiElement::Separator);
+	inner_locked.gui_elements.push(GuiElement::Label (String::from("Please close Revit so the uninstall can continue")));
+	inner_locked.gui_elements.push(GuiElement::Label (String::from("(It will takes several seconds for the installer to respond)")));
+	drop(inner_locked);
+	while is_revit_running() {thread::sleep(Duration::from_millis(100));}
+	Ok(())
+}
+
+pub fn is_revit_running() -> bool {
+	System::new_all().processes().values().any(|p| p.name() == "Revit.exe")
 }
 
 

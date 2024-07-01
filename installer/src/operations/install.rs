@@ -177,7 +177,7 @@ pub fn download_assets() -> Result<Vec<u8>> {
 	let asset = response
 		.assets
 		.iter()
-		.find(|a| a.name == settings::ASSETS_NAME)
+		.find(|a| a.name == "Assets.zip")
 		.ok_or(Error::msg("Asset not found in the latest release"))?;
 	
 	// download assets

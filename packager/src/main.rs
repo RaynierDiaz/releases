@@ -33,8 +33,6 @@ fn main() -> Result<()> {
 	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
 	let confirm = prompt!("Checklist: have you built the backend in release mode? "; YesNoInput);
 	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
-	let confirm = prompt!("Checklist: have you tested the release extension? "; YesNoInput);
-	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
 	
 	let output_dir = releases_dir.join("output");
 	if output_dir.exists() {
@@ -89,7 +87,13 @@ fn main() -> Result<()> {
 	
 	println!("Done.");
 	
-	prompt!("Finished packaging extension. Files to release are in /output, press enter to exit ");
+	println!();
+	println!();
+	println!();
+	println!("Finished packaging extension, files to release are in /output.");
+	println!("NOTE: make sure you test the addin and installer before releasing");
+	println!();
+	prompt!("Packing finished, press enter to exit ");
 	
 	Ok(())
 }
