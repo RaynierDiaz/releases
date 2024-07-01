@@ -4,6 +4,12 @@
 <br>
 <br>
 
+- Alpha 1.2.0 (24/06/26)
+  - Added graphical UI to the installer
+
+<br>
+<br>
+
 - Alpha 1.1.3 (24/06/25)
   - Moved install directory to revit folders
   - Added diameter text box for pipes
