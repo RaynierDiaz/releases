@@ -7,12 +7,12 @@ pub type DidFinish<T> = Option<T>;
 
 
 
-pub struct App {
-	pub inner: Arc<Mutex<InnerApp>>,
+pub struct OuterApp {
+	pub app: Arc<Mutex<App>>,
 }
 
-impl App {
-	pub fn new(cc: &eframe::CreationContext<'_>, inner: Arc<Mutex<InnerApp>>) -> Self {
+impl OuterApp {
+	pub fn new(cc: &eframe::CreationContext<'_>, app: Arc<Mutex<App>>) -> Self {
 		
 		let mut visuals = Visuals::light();
 		visuals.override_text_color = Some(Color32::from_gray(0));
@@ -24,12 +24,12 @@ impl App {
 		cc.egui_ctx.set_zoom_factor(1.333);
 		
 		Self {
-			inner,
+			app,
 		}
 	}
 }
 
-impl eframe::App for App {
+impl eframe::App for OuterApp {
 	fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
 		let result = gui::app_update(self, ctx);
 		ctx.request_repaint();
@@ -41,7 +41,7 @@ impl eframe::App for App {
 
 
 
-pub struct InnerApp {
+pub struct App {
 	pub gui_elements: Vec<GuiElement>,
 	pub should_close: bool,
 	pub is_self_update: bool,

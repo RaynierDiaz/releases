@@ -3,13 +3,7 @@
 #![warn(clippy::all)]
 #![feature(duration_constants)]
 
-
-
-pub mod settings {
-	pub const REPO_OWNER: &str = "RaynierDiaz";
-	pub const REPO_NAME: &str = "releases";
-	pub const LATEST_ASSETS_VERSION: usize = 3;
-}
+pub const LATEST_ASSETS_VERSION: usize = 1;
 
 
 
@@ -24,6 +18,16 @@ pub mod background_thread;
 pub mod data;
 pub mod utils;
 pub mod custom_impls;
+
+pub mod settings {
+	pub const ADDIN_NAME: &str = include_str!("settings/addin_name.txt");
+	pub const ADDIN_ID: &str = include_str!("settings/addin_id.txt");
+	pub const VENDOR_DESCRIPTION: &str = include_str!("settings/vendor_description.txt");
+	pub const ASSETS_URL: &str = include_str!("settings/assets_url.txt");
+	pub const INSTALLER_URL: &str = include_str!("settings/installer_url.txt");
+	pub const ASSEMBLY_NAME: &str = include_str!("settings/assembly_name.txt");
+	pub const FULL_CLASS_NAME: &str = include_str!("settings/full_class_name.txt");
+}
 
 pub mod prelude {
 	pub use crate::{*, data::*, custom_impls::*};
@@ -43,9 +47,9 @@ fn main() {
 	let is_self_update = first_arg.as_deref() == Some("--self-update");
 	
 	let select_action_rc = Arc::new(Mutex::new(0));
-	let inner = Arc::new(Mutex::new(InnerApp {
+	let app = Arc::new(Mutex::new(App {
 		gui_elements: vec!(
-			GuiElement::Header (String::from("Tupelo Workbench Installer")),
+			GuiElement::Header (format!("{} Installer", settings::ADDIN_NAME)),
 			GuiElement::Separator,
 			GuiElement::Label (String::from("What would you like to do?")),
 			GuiElement::RadioButton {selected: select_action_rc.clone(), value: 0, text: String::from("Install (uses latest version)")},
@@ -59,8 +63,8 @@ fn main() {
 		is_self_update,
 	}));
 	
-	let inner_clone = inner.clone();
-	thread::spawn(|| background_thread::run(inner_clone));
+	let app_clone = app.clone();
+	thread::spawn(|| background_thread::run(app_clone));
 	
 	let eframe_options = eframe::NativeOptions {
 		viewport: egui::ViewportBuilder::default()
@@ -76,7 +80,7 @@ fn main() {
 	let result = eframe::run_native(
 		"Tupelo Workbench Installer",
 		eframe_options,
-		Box::new(|cc| Box::new(App::new(cc, inner))),
+		Box::new(|cc| Box::new(OuterApp::new(cc, app))),
 	);
 	if let Err(err) = result {
 		utils::fatal_error(format!("Fatal error while running installer: {err:#?}"));

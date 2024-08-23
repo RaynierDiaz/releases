@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!--FORMAT_VERSION_1
+
+
+
+ADDIN_NAME Addin
+VENDOR_DESCRIPTION
+
+Thank you for downloading our extension! This file is how Revit loads the extension, and
+changing the files manually is not recommended unless you really know what you're doing.
+
+To update / uninstall, please download the extension installer here:
+INSTALLER_URL
+
+
+
+-->
+<RevitAddIns>
+	<AddIn Type="Application">
+		<Name>ADDIN_NAME</Name>
+		<Assembly>EXTENSION_DIR\ASSEMBLY_NAME</Assembly>
+		<AddInId>ADDIN_ID</AddInId>
+		<FullClassName>FULL_CLASS_NAME</FullClassName>
+		<VendorId>TupeloWorkbench</VendorId>
+		<VendorDescription>VENDOR_DESCRIPTION</VendorDescription>
+	</AddIn>
+</RevitAddIns>

@@ -3,10 +3,10 @@ use utils::unsynced_err;
 
 
 
-pub fn run(inner: Arc<Mutex<InnerApp>>) {
-	let result = try_run(inner.clone());
+pub fn run(app: Arc<Mutex<App>>) {
+	let result = try_run(app.clone());
 	if let Err(err) = result {
-		let result = show_error_message(inner, &err);
+		let result = show_error_message(app, &err);
 		if let Err(msg_err) = result {
 			utils::fatal_error(format!("Failed to show error message in installer window. Error message error: {msg_err:#?}\nOriginal error: {err:#?}"));
 		}
@@ -15,24 +15,24 @@ pub fn run(inner: Arc<Mutex<InnerApp>>) {
 
 
 
-pub fn show_error_message(inner: Arc<Mutex<InnerApp>>, err: &Error) -> Result<()> {
-	let mut inner_locked = inner.lock().map_err_string()?;
-	inner_locked.gui_elements.clear();
-	inner_locked.gui_elements.push(GuiElement::Label (String::from("Error")));
-	inner_locked.gui_elements.push(GuiElement::Separator);
-	inner_locked.gui_elements.push(GuiElement::Label (format!("An error ocurred while running the installer. Please contact Tupelo Workbench with this error message: {err:#?}")));
-	inner_locked.gui_elements.push(GuiElement::BottomElements (vec!(
+pub fn show_error_message(app: Arc<Mutex<App>>, err: &Error) -> Result<()> {
+	let mut app_locked = app.lock().map_err_string()?;
+	app_locked.gui_elements.clear();
+	app_locked.gui_elements.push(GuiElement::Label (String::from("Error")));
+	app_locked.gui_elements.push(GuiElement::Separator);
+	app_locked.gui_elements.push(GuiElement::Label (format!("An error ocurred while running the installer. Please contact Tupelo Workbench with this error message: {err:#?}")));
+	app_locked.gui_elements.push(GuiElement::BottomElements (vec!(
 		GuiElement::Button {text: String::from("Exit"), just_clicked: false},
 	)));
-	drop(inner_locked);
+	drop(app_locked);
 	loop {
 		thread::sleep(Duration::from_millis(100));
-		let mut inner_locked = inner.lock().map_err_string()?;
-		let GuiElement::BottomElements (bottom_elements) = &mut inner_locked.gui_elements[3] else {return unsynced_err();};
+		let mut app_locked = app.lock().map_err_string()?;
+		let GuiElement::BottomElements (bottom_elements) = &mut app_locked.gui_elements[3] else {return unsynced_err();};
 		let GuiElement::Button {just_clicked,  ..} = &mut bottom_elements[0] else {return unsynced_err();};
 		let just_clicked = mem::take(just_clicked);
 		if just_clicked {
-			inner_locked.should_close = true;
+			app_locked.should_close = true;
 			break;
 		}
 	}
@@ -41,24 +41,24 @@ pub fn show_error_message(inner: Arc<Mutex<InnerApp>>, err: &Error) -> Result<()
 
 
 
-pub fn try_run(inner: Arc<Mutex<InnerApp>>) -> Result<()> {
+pub fn try_run(app: Arc<Mutex<App>>) -> Result<()> {
 	
-	let inner_locked = inner.lock().map_err_string()?;
-	let is_self_update = inner_locked.is_self_update;
-	drop(inner_locked);
+	let app_locked = app.lock().map_err_string()?;
+	let is_self_update = app_locked.is_self_update;
+	drop(app_locked);
 	if is_self_update {
-		operations::self_update::self_update(inner.clone())?;
-		let mut inner_locked = inner.lock().map_err_string()?;
-		inner_locked.should_close = true;
+		operations::self_update::self_update(app.clone())?;
+		let mut app_locked = app.lock().map_err_string()?;
+		app_locked.should_close = true;
 		return Ok(());
 	}
 	
 	// select action
 	loop {
 		thread::sleep(Duration::from_millis(100));
-		let mut inner_locked = inner.lock().map_err_string()?;
+		let mut app_locked = app.lock().map_err_string()?;
 		let next_button_clicked = {
-			let GuiElement::BottomElements (bottom_element) = &mut inner_locked.gui_elements[6] else {return unsynced_err();};
+			let GuiElement::BottomElements (bottom_element) = &mut app_locked.gui_elements[6] else {return unsynced_err();};
 			let GuiElement::Button {just_clicked, ..} = &mut bottom_element[0] else {return unsynced_err();};
 			mem::take(just_clicked)
 		};
@@ -66,20 +66,20 @@ pub fn try_run(inner: Arc<Mutex<InnerApp>>) -> Result<()> {
 	}
 	
 	// run
-	let inner_locked = inner.lock().map_err_string()?;
-	let GuiElement::RadioButton {selected, ..} = &inner_locked.gui_elements[3] else {return unsynced_err();};
+	let app_locked = app.lock().map_err_string()?;
+	let GuiElement::RadioButton {selected, ..} = &app_locked.gui_elements[3] else {return unsynced_err();};
 	let selected_action = *selected.lock().map_err_string()?;
-	drop(inner_locked);
+	drop(app_locked);
 	
 	match selected_action {
-		0 => {let _ = operations::install::install(inner.clone(), false, None, false)?;}
-		1 => {let _ = operations::install::install(inner.clone(), true, None, false)?;}
-		2 => {let _ = operations::uninstall::uninstall(inner.clone(), None, false)?;}
+		0 => {let _ = operations::install::install(app.clone(), false, None, false)?;}
+		1 => {let _ = operations::install::install(app.clone(), true, None, false)?;}
+		2 => {let _ = operations::uninstall::uninstall(app.clone(), None, false, false)?;}
 		_ => unreachable!(),
 	};
 	
-	let mut inner_locked = inner.lock().map_err_string()?;
-	inner_locked.should_close = true;
+	let mut app_locked = app.lock().map_err_string()?;
+	app_locked.should_close = true;
 	
 	Ok(())
 }

@@ -3,14 +3,14 @@ use egui::{Layout, Ui, Vec2};
 
 
 
-pub fn app_update(app: &mut App, ctx: &egui::Context) -> Result<()> {
-	let mut inner_locked = app.inner.lock().map_err_string()?;
-	if inner_locked.should_close {
+pub fn app_update(app: &mut OuterApp, ctx: &egui::Context) -> Result<()> {
+	let mut app_locked = app.app.lock().map_err_string()?;
+	if app_locked.should_close {
 		ctx.send_viewport_cmd(egui::ViewportCommand::Close);
 	}
 	let result = egui::CentralPanel::default().show(ctx, |ui| {
 		ui.spacing_mut().item_spacing.y = 5.0;
-		for gui_element in &mut inner_locked.gui_elements {
+		for gui_element in &mut app_locked.gui_elements {
 			draw_gui_element(gui_element, ui)?;
 		}
 		Ok(())
