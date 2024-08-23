@@ -48,8 +48,8 @@ fn main() -> Result<()> {
 	println!("Starting packaging, creating Assets.zip...");
 	match addin.1 {
 		"WorkHorse" => prepare_assets::workhorse::prepare_assets_and_installer(&mut zip, options, &releases_dir)?,
-		"WorkVault" => prepare_assets::workhorse::prepare_assets_and_installer(&mut zip, options, &releases_dir)?,
-		"WorkVision" => prepare_assets::workhorse::prepare_assets_and_installer(&mut zip, options, &releases_dir)?,
+		"WorkVault" => prepare_assets::workvault::prepare_assets_and_installer(&mut zip, options, &releases_dir)?,
+		"WorkVision" => prepare_assets::workvision::prepare_assets_and_installer(&mut zip, options, &releases_dir)?,
 		_ => unreachable!(),
 	}
 	

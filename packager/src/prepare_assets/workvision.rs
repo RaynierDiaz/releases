@@ -10,9 +10,9 @@ pub const EXTENSION_DIR: &str = "C:\\ProgramData\\WorkbenchRevitExt";
 pub fn prepare_assets_and_installer(zip: &mut ZipWriter<File>, options: FileOptions<()>, releases_dir: &Path) -> Result<()> {
 	
 	fs::write(releases_dir.join("installer/src/settings/addin_name.txt"), "WorkVision")?;
-	fs::write(releases_dir.join("installer/src/settings/addin_id.txt"), "")?;
-	fs::write(releases_dir.join("installer/src/settings/assets_url.txt"), "https://github.com/RaynierDiaz/releases/releases/download/latest/Assets.zip")?;
-	fs::write(releases_dir.join("installer/src/settings/installer_url.txt"), "https://github.com/RaynierDiaz/releases/releases/download/latest/Installer.zip")?;
+	fs::write(releases_dir.join("installer/src/settings/addin_id.txt"), "c03cf504-109a-4426-88e6-59dfa2d718ba")?;
+	fs::write(releases_dir.join("installer/src/settings/assets_url.txt"), "https://github.com/RaynierDiaz/WorkVision/releases/download/latest/Assets.zip")?;
+	fs::write(releases_dir.join("installer/src/settings/installer_url.txt"), "https://github.com/RaynierDiaz/WorkVision/releases/download/latest/Installer.zip")?;
 	fs::write(releases_dir.join("installer/src/settings/assembly_name.txt"), "")?;
 	fs::write(releases_dir.join("installer/src/settings/full_class_name.txt"), "")?;
 	

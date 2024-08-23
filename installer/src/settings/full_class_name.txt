@@ -1,1 +1,1 @@
-TupeloWorkbenchExt.MainApp
+WorkVault.RevitApp

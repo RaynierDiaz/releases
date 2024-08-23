@@ -3,7 +3,7 @@
 
 
 
-ADDIN_NAME Addins
+ADDIN_NAME Addin
 VENDOR_DESCRIPTION
 
 Thank you for downloading our extension! This file is how Revit loads the extension, and
@@ -19,7 +19,7 @@ INSTALLER_URL
 	<AddIn Type="Application">
 		<Name>ADDIN_NAME</Name>
 		<Assembly>EXTENSION_DIR\ASSEMBLY_NAME</Assembly>
-		<AddInId>54757065-6C6F-2057-6F72-6B62656E6368</AddInId>
+		<AddInId>ADDIN_ID</AddInId>
 		<FullClassName>FULL_CLASS_NAME</FullClassName>
 		<VendorId>TupeloWorkbench</VendorId>
 		<VendorDescription>VENDOR_DESCRIPTION</VendorDescription>
