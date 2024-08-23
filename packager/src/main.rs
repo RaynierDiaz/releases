@@ -1,6 +1,4 @@
-pub mod settings {
-	pub const EXTENSION_DIR: &str = "C:\\ProgramData\\WorkbenchRevitExt";
-}
+pub mod prepare_assets;
 
 
 
@@ -25,7 +23,9 @@ fn main() -> Result<()> {
 		}
 	}
 	
-	let confirm = prompt!("Checklist: do you have the latest version of the Workbench repo? "; YesNoInput);
+	let addin = prompt!("Which addin?"; ["WorkHorse", "WorkVault", "WorkVision"]);
+	
+	let confirm = prompt!("Checklist: do you have the latest version of the addin repo(s)? "; YesNoInput);
 	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
 	let confirm = prompt!("Checklist: do you have the latest version of the Releases repo? "; YesNoInput);
 	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
@@ -40,32 +40,18 @@ fn main() -> Result<()> {
 	}
 	fs::create_dir(releases_dir.join("output")).context("Failed to create output folder")?;
 	
-	println!("Starting packaging, creating Assets.zip...");
-	
 	// assets.zip
 	let output_file = File::create(releases_dir.join("output/Assets.zip")).context("Failed to create assets.zip file")?;
 	let mut zip = ZipWriter::new(output_file);
-	let options = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
+	let options: zip::write::FileOptions<()> = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
 	
-	// frontend dll
-	zip.start_file("Frontend.dll", options)?;
-	let frontend_file_contents = fs::read(PathBuf::from(settings::EXTENSION_DIR).join("C#Frontend/bin/release/net48/TupeloWorkbenchExt.dll"))?;
-	zip.write_all(&frontend_file_contents)?;
-	
-	// backend dll
-	zip.start_file("Backend.dll", options)?;
-	let backend_file_contents = fs::read(PathBuf::from(settings::EXTENSION_DIR).join("C#Backend/bin/release/net48/TupeloWorkbenchExt.dll"))?;
-	zip.write_all(&backend_file_contents)?;
-	
-	// addin file
-	zip.start_file("TupeloWorkbench.addin", options)?;
-	let addin_file_contents = fs::read(releases_dir.join("assets/TupeloWorkbench.addin"))?;
-	zip.write_all(&addin_file_contents)?;
-	
-	// readme file
-	zip.start_file("readme.txt", options)?;
-	let readme_file_contents = fs::read(releases_dir.join("assets/readme.txt"))?;
-	zip.write_all(&readme_file_contents)?;
+	println!("Starting packaging, creating Assets.zip...");
+	match addin.1 {
+		"WorkHorse" => prepare_assets::workhorse::prepare_assets_and_installer(&mut zip, options, &releases_dir)?,
+		"WorkVault" => prepare_assets::workhorse::prepare_assets_and_installer(&mut zip, options, &releases_dir)?,
+		"WorkVision" => prepare_assets::workhorse::prepare_assets_and_installer(&mut zip, options, &releases_dir)?,
+		_ => unreachable!(),
+	}
 	
 	zip.finish()?;
 	

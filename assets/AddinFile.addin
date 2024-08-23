@@ -18,7 +18,7 @@ INSTALLER_URL
 <RevitAddIns>
 	<AddIn Type="Application">
 		<Name>ADDIN_NAME</Name>
-		<Assembly>EXTENSION_DIR\assembly_name</Assembly>
+		<Assembly>EXTENSION_DIR\ASSEMBLY_NAME</Assembly>
 		<AddInId>54757065-6C6F-2057-6F72-6B62656E6368</AddInId>
 		<FullClassName>FULL_CLASS_NAME</FullClassName>
 		<VendorId>TupeloWorkbench</VendorId>
