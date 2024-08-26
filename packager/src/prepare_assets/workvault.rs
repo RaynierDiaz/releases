@@ -1,6 +1,7 @@
 use crate::*;
 use std::{fs::File, path::Path};
 use anyhow::*;
+use walkdir::WalkDir;
 use zip::{write::FileOptions, ZipWriter};
 
 pub const EXTENSION_DIR: &str = "C:\\ProgramData\\WorkVault";
@@ -25,6 +26,17 @@ pub fn prepare_assets_and_installer(zip: &mut ZipWriter<File>, options: FileOpti
 	zip.start_file("Program/WpfWindow.exe", options)?;
 	let apf_file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("WpfWindow/bin/release/net48/WpfWindow.exe"))?;
 	zip.write_all(&apf_file_contents)?;
+	
+	// assets
+	for entry in WalkDir::new(PathBuf::from(EXTENSION_DIR).join("asset")) {
+		let entry = entry?;
+		let entry = entry.path();
+		if entry.is_dir() {continue;}
+		let zip_path = PathBuf::from("Program").join(entry.strip_prefix(EXTENSION_DIR)?);
+		zip.start_file(zip_path.to_string_lossy(), options)?;
+		let asset_file_contents = fs::read(entry)?;
+		zip.write_all(&asset_file_contents)?;
+	}
 	
 	// helix dlls
 	zip.start_file("Program/HelixToolkit.dll", options)?;

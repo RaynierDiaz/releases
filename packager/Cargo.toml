@@ -6,4 +6,5 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.86"
 smart-read = "0.7.0"
+walkdir = "2.5.0"
 zip = "2.2.0"

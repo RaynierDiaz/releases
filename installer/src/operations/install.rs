@@ -242,6 +242,7 @@ pub fn write_files(zip_data: &mut ZipArchive<Cursor<&[u8]>>, revit_path: &Path) 
 				file_data = replace_description_labels(String::from_utf8(file_data)?).into();
 			}
 			let new_file_path = ext_dir.join(file_name);
+			fs::create_dir_all(new_file_path.parent().expect("Attempted to write file that has no parent"))?;
 			fs::write(&new_file_path, file_data).context(format!("Attempted to write file {new_file_path:?}"))?;
 		}
 	}
