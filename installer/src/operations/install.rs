@@ -6,8 +6,8 @@ use std::io::{Cursor, Read};
 
 
 
-pub fn install(app: Arc<Mutex<App>>, is_offline: bool, revit_path: Option<PathBuf>, is_self_update: bool) -> Result<DidFinish<()>> {
-	match try_install(app.clone(), is_offline, revit_path, is_self_update) {
+pub fn install(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_update: bool) -> Result<DidFinish<()>> {
+	match try_install(app.clone(), revit_path, is_self_update) {
 		StdResult::Ok(()) => Ok(Some(())),
 		StdResult::Err(err) => {
 			background_thread::show_error_message(app, &err)?;
@@ -18,7 +18,7 @@ pub fn install(app: Arc<Mutex<App>>, is_offline: bool, revit_path: Option<PathBu
 
 
 
-pub fn try_install(app: Arc<Mutex<App>>, is_offline: bool, revit_path: Option<PathBuf>, is_self_update: bool) -> Result<()> {
+pub fn try_install(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_update: bool) -> Result<()> {
 	
 	let revit_path = operations::get_revit_path::get_revit_path(app.clone(), "Install", revit_path)?;
 	
@@ -80,26 +80,7 @@ pub fn try_install(app: Arc<Mutex<App>>, is_offline: bool, revit_path: Option<Pa
 		}
 	}
 	
-	// get / download assets
-	#[allow(unused_assignments)]
-	let mut assets_owned = vec!();
-	let assets = if is_offline {
-		const ASSETS_DATA: &[u8] = include_bytes!("../Assets.zip");
-		ASSETS_DATA
-	} else {
-		let mut app_locked = app.lock().map_err_string()?;
-		app_locked.gui_elements.clear();
-		app_locked.gui_elements.push(GuiElement::Header (String::from("Installing")));
-		app_locked.gui_elements.push(GuiElement::Separator);
-		app_locked.gui_elements.push(GuiElement::Label (String::from("Downloading assets, please wait...")));
-		drop(app_locked);
-		let assets = download_assets()?;
-		thread::sleep(Duration::SECOND);
-		assets_owned = assets;
-		&assets_owned
-	};
-	
-	let zip_cursor = Cursor::new(assets);
+	let zip_cursor = Cursor::new(&include_bytes!("../Assets.zip")[..]);
 	let mut zip_data = ZipArchive::new(zip_cursor)?;
 	
 	let version = get_format_version(&mut zip_data).unwrap_or(LATEST_ASSETS_VERSION);

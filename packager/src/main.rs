@@ -25,13 +25,16 @@ fn main() -> Result<()> {
 	
 	let addin = prompt!("Which addin?"; ["WorkHorse", "WorkVault", "WorkVision"]);
 	
+	println!();
+	let version = prompt!("Version number: ");
+	fs::write(releases_dir.join("installer/src/settings/version.txt"), version)?;
+	
+	println!();
 	let confirm = prompt!("Checklist: do you have the latest version of the addin repo(s)? "; YesNoInput);
 	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
 	let confirm = prompt!("Checklist: do you have the latest version of the Releases repo? "; YesNoInput);
 	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
-	let confirm = prompt!("Checklist: have you built the frontend in release mode? "; YesNoInput);
-	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
-	let confirm = prompt!("Checklist: have you built the backend in release mode? "; YesNoInput);
+	let confirm = prompt!("Checklist: have you built everything in release mode? "; YesNoInput);
 	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
 	
 	let output_dir = releases_dir.join("output");

@@ -19,13 +19,18 @@ pub fn prepare_assets_and_installer(zip: &mut ZipWriter<File>, options: FileOpti
 	
 	// frontend dll
 	zip.start_file("Program/WorkVault.dll", options)?;
-	let frontend_file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("WorkVault/bin/release/net48/WorkVault.dll"))?;
-	zip.write_all(&frontend_file_contents)?;
+	let file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("WorkVault/bin/release/net48/WorkVault.dll"))?;
+	zip.write_all(&file_contents)?;
 	
 	// wpf app
 	zip.start_file("Program/WpfWindow.exe", options)?;
-	let apf_file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("WpfWindow/bin/release/net48/WpfWindow.exe"))?;
-	zip.write_all(&apf_file_contents)?;
+	let file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("WpfWindow/bin/release/net48/WpfWindow.exe"))?;
+	zip.write_all(&file_contents)?;
+	
+	// settings file
+	zip.start_file("Program/settings.txt", options)?;
+	let file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("settings.txt"))?;
+	zip.write_all(&file_contents)?;
 	
 	// assets
 	for entry in WalkDir::new(PathBuf::from(EXTENSION_DIR).join("asset")) {
@@ -34,27 +39,27 @@ pub fn prepare_assets_and_installer(zip: &mut ZipWriter<File>, options: FileOpti
 		if entry.is_dir() {continue;}
 		let zip_path = PathBuf::from("Program").join(entry.strip_prefix(EXTENSION_DIR)?);
 		zip.start_file(zip_path.to_string_lossy(), options)?;
-		let asset_file_contents = fs::read(entry)?;
-		zip.write_all(&asset_file_contents)?;
+		let file_contents = fs::read(entry)?;
+		zip.write_all(&file_contents)?;
 	}
 	
 	// helix dlls
 	zip.start_file("Program/HelixToolkit.dll", options)?;
-	let helix_file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("WpfWindow/bin/release/net48/HelixToolkit.dll"))?;
-	zip.write_all(&helix_file_contents)?;
+	let file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("WpfWindow/bin/release/net48/HelixToolkit.dll"))?;
+	zip.write_all(&file_contents)?;
 	zip.start_file("Program/HelixToolkit.Wpf.dll", options)?;
-	let helix_wpf_file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("WpfWindow/bin/release/net48/HelixToolkit.Wpf.dll"))?;
-	zip.write_all(&helix_wpf_file_contents)?;
+	let file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("WpfWindow/bin/release/net48/HelixToolkit.Wpf.dll"))?;
+	zip.write_all(&file_contents)?;
 	
 	// addin file
 	zip.start_file("AddinFile.addin", options)?;
-	let addin_file_contents = fs::read(releases_dir.join("assets/AddinFile.addin"))?;
-	zip.write_all(&addin_file_contents)?;
+	let file_contents = fs::read(releases_dir.join("assets/AddinFile.addin"))?;
+	zip.write_all(&file_contents)?;
 	
 	// readme file
 	zip.start_file("Program/readme.txt", options)?;
-	let readme_file_contents = fs::read(releases_dir.join("assets/Program/readme.txt"))?;
-	zip.write_all(&readme_file_contents)?;
+	let file_contents = fs::read(releases_dir.join("assets/Program/readme.txt"))?;
+	zip.write_all(&file_contents)?;
 	
 	Ok(())
 }

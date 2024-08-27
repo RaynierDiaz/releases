@@ -22,6 +22,7 @@ pub mod custom_impls;
 pub mod settings {
 	pub const ADDIN_NAME: &str = include_str!("settings/addin_name.txt");
 	pub const ADDIN_ID: &str = include_str!("settings/addin_id.txt");
+	pub const ADDIN_VERSION: &str = include_str!("settings/addin_version.txt");
 	pub const VENDOR_DESCRIPTION: &str = include_str!("settings/vendor_description.txt");
 	pub const ASSETS_URL: &str = include_str!("settings/assets_url.txt");
 	pub const INSTALLER_URL: &str = include_str!("settings/installer_url.txt");
@@ -49,12 +50,11 @@ fn main() {
 	let select_action_rc = Arc::new(Mutex::new(0));
 	let app = Arc::new(Mutex::new(App {
 		gui_elements: vec!(
-			GuiElement::Header (format!("{} Installer", settings::ADDIN_NAME)),
+			GuiElement::Header (format!("{} {} Installer", settings::ADDIN_NAME, settings::ADDIN_VERSION)),
 			GuiElement::Separator,
 			GuiElement::Label (String::from("What would you like to do?")),
-			GuiElement::RadioButton {selected: select_action_rc.clone(), value: 0, text: String::from("Install (uses latest version)")},
-			GuiElement::RadioButton {selected: select_action_rc.clone(), value: 1, text: String::from("Offline Install")},
-			GuiElement::RadioButton {selected: select_action_rc.clone(), value: 2, text: String::from("Uninstall")},
+			GuiElement::RadioButton {selected: select_action_rc.clone(), value: 0, text: String::from("Install")},
+			GuiElement::RadioButton {selected: select_action_rc.clone(), value: 1, text: String::from("Uninstall")},
 			GuiElement::BottomElements (vec!(
 				GuiElement::Button {text: String::from("Next"), just_clicked: false}
 			)),
@@ -83,7 +83,7 @@ fn main() {
 		Box::new(|cc| Box::new(OuterApp::new(cc, app))),
 	);
 	if let Err(err) = result {
-		utils::fatal_error(format!("Fatal error while running installer: {err:#?}"));
+		utils::fatal_error(format!("Fatal error while running installer: {err}"));
 	}
 	
 }

@@ -58,7 +58,7 @@ pub fn try_run(app: Arc<Mutex<App>>) -> Result<()> {
 		thread::sleep(Duration::from_millis(100));
 		let mut app_locked = app.lock().map_err_string()?;
 		let next_button_clicked = {
-			let GuiElement::BottomElements (bottom_element) = &mut app_locked.gui_elements[6] else {return unsynced_err();};
+			let GuiElement::BottomElements (bottom_element) = &mut app_locked.gui_elements[5] else {return unsynced_err();};
 			let GuiElement::Button {just_clicked, ..} = &mut bottom_element[0] else {return unsynced_err();};
 			mem::take(just_clicked)
 		};
@@ -72,9 +72,8 @@ pub fn try_run(app: Arc<Mutex<App>>) -> Result<()> {
 	drop(app_locked);
 	
 	match selected_action {
-		0 => {let _ = operations::install::install(app.clone(), false, None, false)?;}
-		1 => {let _ = operations::install::install(app.clone(), true, None, false)?;}
-		2 => {let _ = operations::uninstall::uninstall(app.clone(), None, false, false)?;}
+		0 => {let _ = operations::install::install(app.clone(), None, false)?;}
+		1 => {let _ = operations::uninstall::uninstall(app.clone(), None, false, false)?;}
 		_ => unreachable!(),
 	};
 	

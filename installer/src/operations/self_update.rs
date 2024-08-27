@@ -21,7 +21,7 @@ pub fn try_self_update(app: Arc<Mutex<App>>) -> Result<()> {
 	let revit_path = crate::operations::uninstall::try_uninstall(app.clone(), None, true, true)?;
 	
 	// reinstall
-	crate::operations::install::try_install(app.clone(), true, Some(revit_path), true)?;
+	crate::operations::install::try_install(app.clone(), Some(revit_path), true)?;
 	
 	// delete self
 	self_replace::self_delete().with_context(|| format!("Failed to delete temporary installer. Once this is closed, please delete this file: {:?}", std::env::current_dir().unwrap()))?;
