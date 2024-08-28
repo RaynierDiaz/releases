@@ -26,16 +26,19 @@ fn main() -> Result<()> {
 	let addin = prompt!("Which addin?"; ["WorkHorse", "WorkVault", "WorkVision"]);
 	
 	println!();
-	let version = prompt!("Version number: ");
-	fs::write(releases_dir.join("installer/src/settings/version.txt"), version)?;
-	
-	println!();
 	let confirm = prompt!("Checklist: do you have the latest version of the addin repo(s)? "; YesNoInput);
 	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
 	let confirm = prompt!("Checklist: do you have the latest version of the Releases repo? "; YesNoInput);
 	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
 	let confirm = prompt!("Checklist: have you built everything in release mode? "; YesNoInput);
 	if !confirm {println!("Please do this first, canceling package"); return Ok(());}
+	
+	println!();
+	let version = prompt!("Version number: ");
+	fs::write(releases_dir.join("installer/src/settings/addin_version.txt"), version)?;
+	
+	println!();
+	println!("Confirmed");
 	
 	let output_dir = releases_dir.join("output");
 	if output_dir.exists() {
@@ -44,7 +47,7 @@ fn main() -> Result<()> {
 	fs::create_dir(releases_dir.join("output")).context("Failed to create output folder")?;
 	
 	// assets.zip
-	let output_file = File::create(releases_dir.join("output/Assets.zip")).context("Failed to create assets.zip file")?;
+	let output_file = File::create(releases_dir.join("installer/src/Assets.zip")).context("Failed to create assets.zip file")?;
 	let mut zip = ZipWriter::new(output_file);
 	let options: zip::write::FileOptions<()> = SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
 	
@@ -59,9 +62,6 @@ fn main() -> Result<()> {
 	zip.finish()?;
 	
 	println!("Done. Building installer...");
-	
-	// installer's Assets copy
-	fs::copy(releases_dir.join("output/Assets.zip"), releases_dir.join("installer/src/Assets.zip")).context("Failed to copy Assets.zip from output to installer/src")?;
 	
 	let result = Command::new("cargo")
 		.current_dir(releases_dir.join("installer"))

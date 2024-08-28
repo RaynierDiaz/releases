@@ -54,7 +54,7 @@ pub fn delete_addin_folder(app: Arc<Mutex<App>>, revit_path: &Path) -> Result<()
 	
 	// delete
 	'outer: loop {
-		match fs::remove_dir_all(&revit_path.join(settings::ADDIN_NAME)) {
+		match fs::remove_dir_all(revit_path.join(settings::ADDIN_NAME)) {
 			StdResult::Ok(()) => break,
 			StdResult::Err(err) => {
 				let mut app_locked = app.lock().map_err_string()?;

@@ -56,32 +56,3 @@ pub enum GuiElement {
 	RadioButton {selected: Arc<Mutex<usize>>, value: usize, text: String},
 	BottomElements (Vec<GuiElement>),
 }
-
-
-
-#[derive(PartialEq)]
-pub enum SelectedAction {
-	Install,
-	OfflineInstall,
-	Uninstall,
-}
-
-
-
-pub enum InstallingState {
-	None,
-	ChooseRevitPath,
-}
-
-
-
-#[derive(Deserialize, Debug)]
-pub struct Asset {
-	pub name: String,
-	pub browser_download_url: String,
-}
-
-#[derive(Deserialize)]
-pub struct Release {
-	pub assets: Vec<Asset>,
-}

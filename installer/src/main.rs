@@ -3,8 +3,6 @@
 #![warn(clippy::all)]
 #![feature(duration_constants)]
 
-pub const LATEST_ASSETS_VERSION: usize = 1;
-
 
 
 use crate::prelude::*;
@@ -12,30 +10,28 @@ use std::thread;
 
 
 
-pub mod operations;
-pub mod gui;
-pub mod background_thread;
-pub mod data;
-pub mod utils;
-pub mod custom_impls;
+pub(crate) mod operations;
+pub(crate) mod gui;
+pub(crate) mod background_thread;
+pub(crate) mod data;
+pub(crate) mod utils;
+pub(crate) mod custom_impls;
 
-pub mod settings {
+pub(crate) mod settings {
 	pub const ADDIN_NAME: &str = include_str!("settings/addin_name.txt");
 	pub const ADDIN_ID: &str = include_str!("settings/addin_id.txt");
 	pub const ADDIN_VERSION: &str = include_str!("settings/addin_version.txt");
 	pub const VENDOR_DESCRIPTION: &str = include_str!("settings/vendor_description.txt");
-	pub const ASSETS_URL: &str = include_str!("settings/assets_url.txt");
 	pub const INSTALLER_URL: &str = include_str!("settings/installer_url.txt");
 	pub const ASSEMBLY_NAME: &str = include_str!("settings/assembly_name.txt");
 	pub const FULL_CLASS_NAME: &str = include_str!("settings/full_class_name.txt");
 }
 
-pub mod prelude {
-	pub use crate::{*, data::*, custom_impls::*};
-	pub use std::{mem, fs, path::{Path, PathBuf}, sync::{Arc, Mutex}, rc::Rc, time::Duration};
-	pub use std::result::Result as StdResult;
-	pub use serde::{Serialize, Deserialize};
-	pub use anyhow::*;
+pub(crate) mod prelude {
+	pub(crate) use crate::{*, data::*, custom_impls::*};
+	pub(crate) use std::{mem, fs, path::{Path, PathBuf}, sync::{Arc, Mutex}, time::Duration};
+	pub(crate) use std::result::Result as StdResult;
+	pub(crate) use anyhow::*;
 }
 
 
@@ -50,7 +46,7 @@ fn main() {
 	let select_action_rc = Arc::new(Mutex::new(0));
 	let app = Arc::new(Mutex::new(App {
 		gui_elements: vec!(
-			GuiElement::Header (format!("{} {} Installer", settings::ADDIN_NAME, settings::ADDIN_VERSION)),
+			GuiElement::Header (format!("{}  {}  Installer", settings::ADDIN_NAME, settings::ADDIN_VERSION)),
 			GuiElement::Separator,
 			GuiElement::Label (String::from("What would you like to do?")),
 			GuiElement::RadioButton {selected: select_action_rc.clone(), value: 0, text: String::from("Install")},
@@ -80,7 +76,7 @@ fn main() {
 	let result = eframe::run_native(
 		"Tupelo Workbench Installer",
 		eframe_options,
-		Box::new(|cc| Box::new(OuterApp::new(cc, app))),
+		Box::new(|cc| StdResult::Ok(Box::new(OuterApp::new(cc, app)))),
 	);
 	if let Err(err) = result {
 		utils::fatal_error(format!("Fatal error while running installer: {err}"));

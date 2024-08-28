@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use reqwest::blocking::Client;
+// use reqwest::blocking::Client;
 use utils::unsynced_err;
 use zip::ZipArchive;
 use std::io::{Cursor, Read};
@@ -83,11 +83,6 @@ pub fn try_install(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_up
 	let zip_cursor = Cursor::new(&include_bytes!("../Assets.zip")[..]);
 	let mut zip_data = ZipArchive::new(zip_cursor)?;
 	
-	let version = get_format_version(&mut zip_data).unwrap_or(LATEST_ASSETS_VERSION);
-	if version != LATEST_ASSETS_VERSION {
-		return Err(Error::msg(format!("Installer is out of date, please re-download installer to continue. If this is the latest version, please submit a bug report.")));
-	}
-	
 	let mut app_locked = app.lock().map_err_string()?;
 	app_locked.gui_elements.clear();
 	app_locked.gui_elements.push(GuiElement::Header (String::from("Installing")));
@@ -144,42 +139,6 @@ pub fn check_already_installed(revit_path: &Path) -> Result<bool> {
 
 
 
-pub fn download_assets() -> Result<Vec<u8>> {
-	
-	// download assets
-	let mut response =
-		Client::new()
-		.get(settings::ASSETS_URL)
-		.send()
-		.context("Attempted to send download request")?;
-	if response.status() != 200 {
-		return Err(Error::msg(format!("Download of assets returned with status code {}.", response.status())));
-	}
-	
-	// extract raw data
-	let Some(len) = response.content_length() else {
-		return Err(Error::msg("Could not get length of received assets data."));
-	};
-	let mut buffer = Vec::with_capacity(len as usize);
-	response.read_to_end(&mut buffer).context("Attempted to read asset data")?;
-	
-	Ok(buffer)
-}
-
-
-
-pub fn get_format_version(zip_data: &mut ZipArchive<Cursor<&[u8]>>) -> Result<usize> {
-	let file_contents = get_file_text(zip_data, "AddinFile.addin")?;
-	let format_line =
-		file_contents.lines()
-		.find(|line| line.starts_with("<!--FORMAT_VERSION_"))
-		.ok_or_else(|| Error::msg(format!("Could find format version in asset files, you may need to re-download the installer. If this is the latest version, please submit a bug report.")))?;
-	let format_num = &format_line[19..];
-	format_num.parse::<usize>().map_err(Error::from)
-}
-
-
-
 pub fn get_file_text(zip_data: &mut ZipArchive<Cursor<&[u8]>>, file_name: &str) -> Result<String> {
 	let mut zip_file = zip_data.by_name(file_name).context(format!("Attempted to find file {file_name:?}"))?;
 	let mut contents = String::with_capacity(zip_file.size() as usize);
@@ -199,14 +158,14 @@ pub fn get_file_bytes(zip_data: &mut ZipArchive<Cursor<&[u8]>>, file_name: &str)
 pub fn write_files(zip_data: &mut ZipArchive<Cursor<&[u8]>>, revit_path: &Path) -> Result<()> {
 	let ext_dir = revit_path.join(settings::ADDIN_NAME);
 	
-	let replace_description_labels = |input: String| -> String {
-		let input = input.replace("EXTENSION_DIR", ext_dir.to_str().unwrap());
-		let input = input.replace("ADDIN_NAME", settings::ADDIN_NAME);
-		let input = input.replace("ADDIN_ID", settings::ADDIN_ID);
-		let input = input.replace("VENDOR_DESCRIPTION", settings::VENDOR_DESCRIPTION);
-		let input = input.replace("INSTALLER_URL", settings::INSTALLER_URL);
-		let input = input.replace("ASSEMBLY_NAME", settings::ASSEMBLY_NAME);
-		let input = input.replace("FULL_CLASS_NAME", settings::FULL_CLASS_NAME);
+	let replace_description_labels = |mut input: String| -> String {
+		input = input.replace("EXTENSION_DIR", ext_dir.to_str().unwrap());
+		input = input.replace("ADDIN_NAME", settings::ADDIN_NAME);
+		input = input.replace("ADDIN_ID", settings::ADDIN_ID);
+		input = input.replace("VENDOR_DESCRIPTION", settings::VENDOR_DESCRIPTION);
+		input = input.replace("INSTALLER_URL", settings::INSTALLER_URL);
+		input = input.replace("ASSEMBLY_NAME", settings::ASSEMBLY_NAME);
+		input = input.replace("FULL_CLASS_NAME", settings::FULL_CLASS_NAME);
 		input
 	};
 	
