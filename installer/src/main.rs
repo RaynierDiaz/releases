@@ -43,18 +43,8 @@ fn main() {
 	let first_arg = args.next();
 	let is_self_update = first_arg.as_deref() == Some("--self-update");
 	
-	let select_action_rc = Arc::new(Mutex::new(0));
 	let app = Arc::new(Mutex::new(App {
-		gui_elements: vec!(
-			GuiElement::Header (format!("{}  {}  Installer", settings::ADDIN_NAME, settings::ADDIN_VERSION)),
-			GuiElement::Separator,
-			GuiElement::Label (String::from("What would you like to do?")),
-			GuiElement::RadioButton {selected: select_action_rc.clone(), value: 0, text: String::from("Install")},
-			GuiElement::RadioButton {selected: select_action_rc.clone(), value: 1, text: String::from("Uninstall")},
-			GuiElement::BottomElements (vec!(
-				GuiElement::Button {text: String::from("Next"), just_clicked: false}
-			)),
-		),
+		gui_elements: vec!(),
 		should_close: false,
 		is_self_update,
 	}));
@@ -65,12 +55,13 @@ fn main() {
 	let eframe_options = eframe::NativeOptions {
 		viewport: egui::ViewportBuilder::default()
 			.with_inner_size([500.0, 350.0])
-			.with_min_inner_size([300.0, 220.0])
+			.with_min_inner_size([350.0, 200.0])
 			.with_icon(
 				eframe::icon_data::from_png_bytes(include_bytes!("../assets/icon 256.png"))
 					.expect("Failed to load icon"),
 			),
 		multisampling: 8,
+		centered: true,
 		..Default::default()
 	};
 	let result = eframe::run_native(

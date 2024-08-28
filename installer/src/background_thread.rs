@@ -43,7 +43,18 @@ pub fn show_error_message(app: Arc<Mutex<App>>, err: &Error) -> Result<()> {
 
 pub fn try_run(app: Arc<Mutex<App>>) -> Result<()> {
 	
-	let app_locked = app.lock().map_err_string()?;
+	let mut app_locked = app.lock().map_err_string()?;
+	let select_action_rc = Arc::new(Mutex::new(0));
+	app_locked.gui_elements = vec!(
+		GuiElement::Header (format!("{}  {}  Installer", settings::ADDIN_NAME, settings::ADDIN_VERSION)),
+		GuiElement::Separator,
+		GuiElement::Label (String::from("What would you like to do?")),
+		GuiElement::RadioButton {selected: select_action_rc.clone(), value: 0, text: String::from("Install")},
+		GuiElement::RadioButton {selected: select_action_rc.clone(), value: 1, text: String::from("Uninstall")},
+		GuiElement::BottomElements (vec!(
+			GuiElement::Button {text: String::from("Next"), just_clicked: false}
+		)),
+	);
 	let is_self_update = app_locked.is_self_update;
 	drop(app_locked);
 	if is_self_update {
