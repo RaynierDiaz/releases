@@ -63,17 +63,17 @@ pub fn delete_addin_folder(app: Arc<Mutex<App>>, revit_path: &Path) -> Result<()
 				app_locked.gui_elements.push(GuiElement::Separator);
 				app_locked.gui_elements.push(GuiElement::Label (format!("Failed to delete addin folder (NOTE: If Revit is open, please close it and wait a few seconds before continuing). Error message: {err:#?}")));
 				app_locked.gui_elements.push(GuiElement::BottomElements (vec!(
-					GuiElement::Button {text: String::from("Retry"), just_clicked: false},
-					GuiElement::Button {text: String::from("Exit"), just_clicked: false},
+					GuiElement::Button {text: String::from("Retry"), was_clicked: false},
+					GuiElement::Button {text: String::from("Exit"), was_clicked: false},
 				)));
 				drop(app_locked);
 				loop {
 					thread::sleep(Duration::from_millis(100));
 					let mut app_locked = app.lock().map_err_string()?;
 					let GuiElement::BottomElements (bottom_elements) = &mut app_locked.gui_elements[3] else {return unsynced_err();};
-					let GuiElement::Button {just_clicked: retry_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+					let GuiElement::Button {was_clicked: retry_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
 					let retry_just_clicked = mem::take(retry_just_clicked);
-					let GuiElement::Button {just_clicked: exit_just_clicked, ..} = &mut bottom_elements[1] else {return unsynced_err();};
+					let GuiElement::Button {was_clicked: exit_just_clicked, ..} = &mut bottom_elements[1] else {return unsynced_err();};
 					let exit_just_clicked = mem::take(exit_just_clicked);
 					if retry_just_clicked {continue 'outer;}
 					if exit_just_clicked {return Err(err.into());}

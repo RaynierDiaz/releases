@@ -48,5 +48,10 @@ pub fn prepare_assets_and_installer(zip: &mut ZipWriter<File>, options: FileOpti
 	let file_contents = fs::read(releases_dir.join("assets/Program/readme.txt"))?;
 	zip.write_all(&file_contents)?;
 	
+	// eula file
+	zip.start_file("Program/eula.txt", options)?;
+	let file_contents = fs::read(releases_dir.join("assets/Program/eula.txt"))?;
+	zip.write_all(&file_contents)?;
+	
 	Ok(())
 }

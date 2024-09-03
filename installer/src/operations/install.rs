@@ -20,6 +20,50 @@ pub fn install(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_update
 
 pub fn try_install(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_update: bool) -> Result<()> {
 	
+	// agree to eula
+	let mut app_locked = app.lock().map_err_string()?;
+	app_locked.gui_elements.clear();
+	app_locked.gui_elements.push(GuiElement::Header (String::from("Eula")));
+	app_locked.gui_elements.push(GuiElement::Separator);
+	app_locked.gui_elements.push(GuiElement::ScrollingLabel (include_str!("../eula.txt").to_string()));
+	app_locked.gui_elements.push(GuiElement::BottomElements (vec!(
+		GuiElement::Button {text: String::from("I Agree"), was_clicked: false},
+		GuiElement::Button {text: String::from("I Don't Agree"), was_clicked: false},
+	)));
+	drop(app_locked);
+	loop {
+		thread::sleep(Duration::from_millis(100));
+		let mut app_locked = app.lock().map_err_string()?;
+		let GuiElement::BottomElements (bottom_elements) = &mut app_locked.gui_elements[3] else {return unsynced_err();};
+		let GuiElement::Button {was_clicked: agree_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+		let agree_just_clicked = mem::take(agree_just_clicked);
+		let GuiElement::Button {was_clicked: dont_agree_just_clicked, ..} = &mut bottom_elements[1] else {return unsynced_err();};
+		let dont_agree_just_clicked = mem::take(dont_agree_just_clicked);
+		drop(app_locked);
+		if agree_just_clicked {break;}
+		if dont_agree_just_clicked {
+			let mut app_locked = app.lock().map_err_string()?;
+			app_locked.gui_elements.clear();
+			app_locked.gui_elements.push(GuiElement::Header (String::from("Eula Rejected")));
+			app_locked.gui_elements.push(GuiElement::Separator);
+			app_locked.gui_elements.push(GuiElement::Label (String::from("Affirmed, the installer will now close.")));
+			app_locked.gui_elements.push(GuiElement::BottomElements (vec!(
+				GuiElement::Button {text: String::from("Close"), was_clicked: false},
+			)));
+			drop(app_locked);
+			loop {
+				thread::sleep(Duration::from_millis(100));
+				let mut app_locked = app.lock().map_err_string()?;
+				let GuiElement::BottomElements (bottom_elements) = &mut app_locked.gui_elements[3] else {return unsynced_err();};
+				let GuiElement::Button {was_clicked: close_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+				let close_just_clicked = mem::take(close_just_clicked);
+				if close_just_clicked {
+					return Ok(());
+				}
+			}
+		}
+	}
+	
 	let revit_path = operations::get_revit_path::get_revit_path(app.clone(), "Install", revit_path)?;
 	
 	// check if already installed
@@ -32,17 +76,17 @@ pub fn try_install(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_up
 			app_locked.gui_elements.push(GuiElement::Label (String::from("Error: cannot install addin because it is already installed.")));
 			app_locked.gui_elements.push(GuiElement::Label (String::from("Please uninstall before continuing.")));
 			app_locked.gui_elements.push(GuiElement::BottomElements (vec!(
-				GuiElement::Button {text: String::from("Uninstall"), just_clicked: false},
-				GuiElement::Button {text: String::from("Exit"), just_clicked: false},
+				GuiElement::Button {text: String::from("Uninstall"), was_clicked: false},
+				GuiElement::Button {text: String::from("Exit"), was_clicked: false},
 			)));
 			drop(app_locked);
 			loop {
 				thread::sleep(Duration::from_millis(100));
 				let mut app_locked = app.lock().map_err_string()?;
 				let GuiElement::BottomElements (bottom_elements) = &mut app_locked.gui_elements[4] else {return unsynced_err();};
-				let GuiElement::Button {just_clicked: uninstall_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+				let GuiElement::Button {was_clicked: uninstall_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
 				let uninstall_just_clicked = mem::take(uninstall_just_clicked);
-				let GuiElement::Button {just_clicked: exit_just_clicked, ..} = &mut bottom_elements[1] else {return unsynced_err();};
+				let GuiElement::Button {was_clicked: exit_just_clicked, ..} = &mut bottom_elements[1] else {return unsynced_err();};
 				let exit_just_clicked = mem::take(exit_just_clicked);
 				drop(app_locked);
 				if exit_just_clicked {return Ok(());}
@@ -61,17 +105,17 @@ pub fn try_install(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_up
 			app_locked.gui_elements.push(GuiElement::Label (String::from("Error: failed to check if this addin is already installed. Continue anyways?")));
 			app_locked.gui_elements.push(GuiElement::Label (format!("Please give Tupelo Workbench this error message: {err:#?}")));
 			app_locked.gui_elements.push(GuiElement::BottomElements (vec!(
-				GuiElement::Button {text: String::from("Continue"), just_clicked: false},
-				GuiElement::Button {text: String::from("Exit"), just_clicked: false},
+				GuiElement::Button {text: String::from("Continue"), was_clicked: false},
+				GuiElement::Button {text: String::from("Exit"), was_clicked: false},
 			)));
 			drop(app_locked);
 			loop {
 				thread::sleep(Duration::from_millis(100));
 				let mut app_locked = app.lock().map_err_string()?;
 				let GuiElement::BottomElements (bottom_elements) = &mut app_locked.gui_elements[4] else {return unsynced_err();};
-				let GuiElement::Button {just_clicked: continue_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+				let GuiElement::Button {was_clicked: continue_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
 				let continue_just_clicked = mem::take(continue_just_clicked);
-				let GuiElement::Button {just_clicked: exit_just_clicked, ..} = &mut bottom_elements[1] else {return unsynced_err();};
+				let GuiElement::Button {was_clicked: exit_just_clicked, ..} = &mut bottom_elements[1] else {return unsynced_err();};
 				let exit_just_clicked = mem::take(exit_just_clicked);
 				drop(app_locked);
 				if exit_just_clicked {return Ok(());}
@@ -104,14 +148,14 @@ pub fn try_install(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_up
 		app_locked.gui_elements.push(GuiElement::Separator);
 		app_locked.gui_elements.push(GuiElement::Label (String::from("Install finished successfully.")));
 		app_locked.gui_elements.push(GuiElement::BottomElements (vec!(
-			GuiElement::Button {text: String::from("Close"), just_clicked: false},
+			GuiElement::Button {text: String::from("Close"), was_clicked: false},
 		)));
 		drop(app_locked);
 		loop {
 			thread::sleep(Duration::from_millis(100));
 			let mut app_locked = app.lock().map_err_string()?;
 			let GuiElement::BottomElements (bottom_elements) = &mut app_locked.gui_elements[3] else {return unsynced_err();};
-			let GuiElement::Button {just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+			let GuiElement::Button {was_clicked: just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
 			let just_clicked = mem::take(just_clicked);
 			if just_clicked {break;}
 		}
@@ -162,7 +206,6 @@ pub fn write_files(zip_data: &mut ZipArchive<Cursor<&[u8]>>, revit_path: &Path) 
 		input = input.replace("EXTENSION_DIR", ext_dir.to_str().unwrap());
 		input = input.replace("ADDIN_NAME", settings::ADDIN_NAME);
 		input = input.replace("ADDIN_ID", settings::ADDIN_ID);
-		input = input.replace("VENDOR_DESCRIPTION", settings::VENDOR_DESCRIPTION);
 		input = input.replace("INSTALLER_URL", settings::INSTALLER_URL);
 		input = input.replace("ASSEMBLY_NAME", settings::ASSEMBLY_NAME);
 		input = input.replace("FULL_CLASS_NAME", settings::FULL_CLASS_NAME);

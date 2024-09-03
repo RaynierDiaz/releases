@@ -4,7 +4,7 @@
 
 
 ADDIN_NAME Addin
-VENDOR_DESCRIPTION
+Tupelo Workbench
 
 Thank you for downloading our extension! This file is how Revit loads the extension, and
 changing the files manually is not recommended unless you really know what you're doing.

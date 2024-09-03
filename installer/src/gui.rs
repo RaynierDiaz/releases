@@ -34,9 +34,18 @@ pub fn draw_gui_element(gui_element: &mut GuiElement, ui: &mut Ui) -> Result<()>
 		
 		GuiElement::Label (text) => {let _ = ui.label(&**text);}
 		
+		GuiElement::ScrollingLabel (text) => {
+			ui.group(|ui| {
+				ui.set_max_height(ui.available_size().y - 40.0);
+				egui::scroll_area::ScrollArea::vertical().show(ui, |ui| {
+					let _ = ui.label(&**text);
+				});
+			});
+		}
+		
 		GuiElement::TextBox (text) => {let _ = ui.text_edit_singleline(text);}
 		
-		GuiElement::Button {text, just_clicked: was_clicked} => {
+		GuiElement::Button {text, was_clicked} => {
 			ui.spacing_mut().item_spacing.x = 20.0;
 			ui.spacing_mut().item_spacing.y = 20.0;
 			*was_clicked |= ui.add_sized(Vec2::new(80.0, 30.0), egui::Button::new(&**text)).clicked();

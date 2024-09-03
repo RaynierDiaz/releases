@@ -42,14 +42,14 @@ pub fn try_uninstall(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_
 		app_locked.gui_elements.push(GuiElement::Separator);
 		app_locked.gui_elements.push(GuiElement::Label (String::from("Uninstall finished successfully.")));
 		app_locked.gui_elements.push(GuiElement::BottomElements (vec!(
-			GuiElement::Button {text: String::from(if is_reinstall {"Continue"} else {"Close"}), just_clicked: false},
+			GuiElement::Button {text: String::from(if is_reinstall {"Continue"} else {"Close"}), was_clicked: false},
 		)));
 		drop(app_locked);
 		loop {
 			thread::sleep(Duration::from_millis(100));
 			let mut app_locked = app.lock().map_err_string()?;
 			let GuiElement::BottomElements (bottom_elements) = &mut app_locked.gui_elements[3] else {return unsynced_err();};
-			let GuiElement::Button {just_clicked: close_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
+			let GuiElement::Button {was_clicked: close_just_clicked, ..} = &mut bottom_elements[0] else {return unsynced_err();};
 			let close_just_clicked = mem::take(close_just_clicked);
 			if close_just_clicked {break;}
 		}
