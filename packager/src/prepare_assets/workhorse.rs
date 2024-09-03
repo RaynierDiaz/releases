@@ -11,8 +11,7 @@ pub fn prepare_assets_and_installer(zip: &mut ZipWriter<File>, options: FileOpti
 	
 	fs::write(releases_dir.join("installer/src/settings/addin_name.txt"), "WorkHorse")?;
 	fs::write(releases_dir.join("installer/src/settings/addin_id.txt"), "194a4656-92f2-4a74-8703-745b37ae3b13")?;
-	fs::write(releases_dir.join("installer/src/settings/assets_url.txt"), "https://github.com/RaynierDiaz/WorkHorse/releases/download/latest/Assets.zip")?;
-	fs::write(releases_dir.join("installer/src/settings/installer_url.txt"), "https://github.com/RaynierDiaz/WorkHorse/releases/download/latest/Installer.zip")?;
+	fs::write(releases_dir.join("installer/src/settings/installer_url.txt"), "http://158.120.176.164:8080/Installers/WorkHorse.exe")?;
 	fs::write(releases_dir.join("installer/src/settings/assembly_name.txt"), "Frontend.dll")?;
 	fs::write(releases_dir.join("installer/src/settings/full_class_name.txt"), "TupeloWorkbenchExt.MainApp")?;
 	
