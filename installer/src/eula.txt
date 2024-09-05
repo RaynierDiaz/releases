@@ -1,7 +1,7 @@
-Last Updated: 2024/08/03
+Workbench Eula, Last Updated 2024/08/03
 
 1. Introduction
-This End User License Agreement (or "Agreement") is a legal agreement between you (or "You"), whether an individual or a legal entity, and Tupelo Workbench (or "Us" / "We" / "Our") for the use of the ADDIN_NAME software ("Software"). By installing, copying, or otherwise using the Software, You agree to be bound by the terms of this Agreement. Unless You agree to this Agreement, nothing stated in this Agreement will take effect.
+This End User License Agreement (or "Agreement") is a legal agreement between you (or "You"), whether an individual or a legal entity, and Workbench LLC (or "Us" / "We" / "Our") for the use of the ADDIN_NAME software ("Software"). By installing, copying, or otherwise using the Software, You agree to be bound by the terms of this Agreement. Unless You agree to this Agreement, nothing stated in this Agreement will take effect.
 
 2. License Grant
 We grant You a non-exclusive, non-transferable, limited license to use the Software in accordance with the terms of this Agreement. This license is for internal use only, whether for personal or business purposes, and does not allow for redistribution or resale of the Software.

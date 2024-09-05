@@ -4,7 +4,7 @@
 
 
 ADDIN_NAME Addin
-Tupelo Workbench
+Workbench LLC
 
 Thank you for downloading our extension! This file is how Revit loads the extension, and
 changing the files manually is not recommended unless you really know what you're doing.
@@ -22,6 +22,6 @@ INSTALLER_URL
 		<AddInId>ADDIN_ID</AddInId>
 		<FullClassName>FULL_CLASS_NAME</FullClassName>
 		<VendorId>TupeloWorkbench</VendorId>
-		<VendorDescription>VENDOR_DESCRIPTION</VendorDescription>
+		<VendorDescription>Workbench LLC</VendorDescription>
 	</AddIn>
 </RevitAddIns>

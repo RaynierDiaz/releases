@@ -64,7 +64,7 @@ fn main() {
 		..Default::default()
 	};
 	let result = eframe::run_native(
-		"Tupelo Workbench Installer",
+		"Workbench LLC Installer",
 		eframe_options,
 		Box::new(|cc| StdResult::Ok(Box::new(OuterApp::new(cc, app)))),
 	);

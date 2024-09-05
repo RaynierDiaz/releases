@@ -1,5 +1,4 @@
 use crate::prelude::*;
-// use reqwest::blocking::Client;
 use utils::unsynced_err;
 use zip::ZipArchive;
 use std::io::{Cursor, Read};
@@ -73,8 +72,8 @@ pub fn try_install(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_up
 			app_locked.gui_elements.clear();
 			app_locked.gui_elements.push(GuiElement::Header (String::from("Installing")));
 			app_locked.gui_elements.push(GuiElement::Separator);
-			app_locked.gui_elements.push(GuiElement::Label (String::from("Error: cannot install addin because it is already installed.")));
-			app_locked.gui_elements.push(GuiElement::Label (String::from("Please uninstall before continuing.")));
+			app_locked.gui_elements.push(GuiElement::Label (String::from("Note: the old version needs to be uninstalled before the new version is installed.")));
+			app_locked.gui_elements.push(GuiElement::Label (String::from("In case you just want to cancel the installation, that option is also given.")));
 			app_locked.gui_elements.push(GuiElement::BottomElements (vec!(
 				GuiElement::Button {text: String::from("Uninstall"), was_clicked: false},
 				GuiElement::Button {text: String::from("Exit"), was_clicked: false},
@@ -103,7 +102,7 @@ pub fn try_install(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_up
 			app_locked.gui_elements.push(GuiElement::Header (String::from("Installing")));
 			app_locked.gui_elements.push(GuiElement::Separator);
 			app_locked.gui_elements.push(GuiElement::Label (String::from("Error: failed to check if this addin is already installed. Continue anyways?")));
-			app_locked.gui_elements.push(GuiElement::Label (format!("Please give Tupelo Workbench this error message: {err:#?}")));
+			app_locked.gui_elements.push(GuiElement::Label (format!("Please give Workbench LLC this error message: {err:#?}")));
 			app_locked.gui_elements.push(GuiElement::BottomElements (vec!(
 				GuiElement::Button {text: String::from("Continue"), was_clicked: false},
 				GuiElement::Button {text: String::from("Exit"), was_clicked: false},
@@ -136,7 +135,7 @@ pub fn try_install(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_up
 	
 	// install files
 	if let Err(err) = write_files(&mut zip_data, &revit_path) {
-		return Err(Error::msg(format!("Failed to write addin files. Please contact Tupelo Workbench with this error message: {err:#?}")));
+		return Err(Error::msg(format!("Failed to write addin files. Please contact Workbench LLC with this error message: {err:#?}")));
 	}
 	
 	thread::sleep(Duration::SECOND);

@@ -10,12 +10,12 @@ pub fn uninstall(app: Arc<Mutex<App>>, revit_path: &Path) -> Result<()> {
 	
 	let result = delete_addin_folder(app.clone(), revit_path);
 	if let Err(err) = result {
-		return Err(Error::msg(format!("Failed to delete addin folder, located at {:?}. Please contact Tupelo Workbench with this error message: {err:#?}.", revit_path.join(settings::ADDIN_NAME))));
+		return Err(Error::msg(format!("Failed to delete addin folder, located at {:?}. Please contact Workbench LLC with this error message: {err:#?}.", revit_path.join(settings::ADDIN_NAME))));
 	}
 	
 	let result = delete_addin_files(app, revit_path);
 	if let Err(err) = result {
-		return Err(Error::msg(format!("Failed to delete addin files, located at {:?}. Please contact Tupelo Workbench with this error message: {err:#?}.", revit_path.join("Addins"))));
+		return Err(Error::msg(format!("Failed to delete addin files, located at {:?}. Please contact Workbench LLC with this error message: {err:#?}.", revit_path.join("Addins"))));
 	}
 	
 	Ok(())

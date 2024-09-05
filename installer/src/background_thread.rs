@@ -20,7 +20,7 @@ pub fn show_error_message(app: Arc<Mutex<App>>, err: &Error) -> Result<()> {
 	app_locked.gui_elements.clear();
 	app_locked.gui_elements.push(GuiElement::Label (String::from("Error")));
 	app_locked.gui_elements.push(GuiElement::Separator);
-	app_locked.gui_elements.push(GuiElement::Label (format!("An error ocurred while running the installer. Please contact Tupelo Workbench with this error message: {err:#?}")));
+	app_locked.gui_elements.push(GuiElement::Label (format!("An error ocurred while running the installer. Please contact Workbench LLC with this error message: {err:#?}")));
 	app_locked.gui_elements.push(GuiElement::BottomElements (vec!(
 		GuiElement::Button {text: String::from("Exit"), was_clicked: false},
 	)));
