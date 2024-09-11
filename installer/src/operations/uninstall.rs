@@ -31,8 +31,8 @@ pub fn try_uninstall(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_
 	
 	let format_version = get_format_version(&revit_path)?;
 	match format_version {
-		1 => uninstallers::uninstall_format_1::uninstall(app.clone(), &revit_path)?,
-		_ => return Err(Error::msg(format!("Unknown format version: {format_version}"))),
+		1 => uninstallers::uninstall_format_1::uninstall(app.clone(), &revit_path, is_reinstall || is_self_update)?,
+		_ => return Err(anyhow!("Unknown format version: {format_version}")),
 	}
 	
 	if !is_self_update {
@@ -70,7 +70,7 @@ pub fn get_format_version(revit_path: &Path) -> Result<usize> {
 			if !addin_file_path.exists() {continue;}
 			break 'addin_path addin_file_path;
 		}
-		return Err(Error::msg(format!("Could not find any .addin files for {}", settings::ADDIN_NAME)));
+		return Err(anyhow!("Could not find any .addin files for {}", settings::ADDIN_NAME));
 	};
 	let format_version = {
 		let addin_contents = fs::read_to_string(addin_file_path)?;

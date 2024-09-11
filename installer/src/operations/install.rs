@@ -135,7 +135,7 @@ pub fn try_install(app: Arc<Mutex<App>>, revit_path: Option<PathBuf>, is_self_up
 	
 	// install files
 	if let Err(err) = write_files(&mut zip_data, &revit_path) {
-		return Err(Error::msg(format!("Failed to write addin files. Please contact Workbench LLC with this error message: {err:#?}")));
+		return Err(anyhow!("Failed to write addin files. Please contact Workbench LLC with this error message: {err:#?}"));
 	}
 	
 	thread::sleep(Duration::SECOND);
