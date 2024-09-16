@@ -21,7 +21,6 @@ pub(crate) mod settings {
 	pub const ADDIN_NAME: &str = include_str!("settings/addin_name.txt");
 	pub const ADDIN_ID: &str = include_str!("settings/addin_id.txt");
 	pub const ADDIN_VERSION: &str = include_str!("settings/addin_version.txt");
-	pub const VENDOR_DESCRIPTION: &str = include_str!("settings/vendor_description.txt");
 	pub const INSTALLER_URL: &str = include_str!("settings/installer_url.txt");
 	pub const ASSEMBLY_NAME: &str = include_str!("settings/assembly_name.txt");
 	pub const FULL_CLASS_NAME: &str = include_str!("settings/full_class_name.txt");
@@ -65,7 +64,7 @@ fn main() {
 		..Default::default()
 	};
 	let result = eframe::run_native(
-		"Tupelo Workbench Installer",
+		"Workbench LLC Installer",
 		eframe_options,
 		Box::new(|cc| StdResult::Ok(Box::new(OuterApp::new(cc, app)))),
 	);

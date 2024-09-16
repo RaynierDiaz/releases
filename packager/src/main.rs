@@ -23,6 +23,10 @@ fn main() -> Result<()> {
 		}
 	}
 	
+	if !fs::exists(releases_dir.join("installer/src/settings"))? {
+		fs::create_dir(releases_dir.join("installer/src/settings"))?;
+	}
+	
 	let addin = prompt!("Which addin?"; ["WorkHorse", "WorkVault", "WorkVision"]);
 	
 	println!();
@@ -35,7 +39,7 @@ fn main() -> Result<()> {
 	
 	println!();
 	let version = prompt!("Version number: ");
-	fs::write(releases_dir.join("installer/src/settings/addin_version.txt"), version)?;
+	fs::write(releases_dir.join("installer/src/settings/addin_version.txt"), version).context("Failed to write addin_version.txt")?;
 	
 	println!();
 	println!("Confirmed");

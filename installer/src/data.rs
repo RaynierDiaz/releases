@@ -51,8 +51,9 @@ pub enum GuiElement {
 	Header (String),
 	Separator,
 	Label (String),
+	ScrollingLabel (String),
 	TextBox (String),
-	Button {text: String, just_clicked: bool},
+	Button {text: String, was_clicked: bool},
 	RadioButton {selected: Arc<Mutex<usize>>, value: usize, text: String},
 	BottomElements (Vec<GuiElement>),
 }

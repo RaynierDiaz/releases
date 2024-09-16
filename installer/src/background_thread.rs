@@ -20,16 +20,16 @@ pub fn show_error_message(app: Arc<Mutex<App>>, err: &Error) -> Result<()> {
 	app_locked.gui_elements.clear();
 	app_locked.gui_elements.push(GuiElement::Label (String::from("Error")));
 	app_locked.gui_elements.push(GuiElement::Separator);
-	app_locked.gui_elements.push(GuiElement::Label (format!("An error ocurred while running the installer. Please contact Tupelo Workbench with this error message: {err:#?}")));
+	app_locked.gui_elements.push(GuiElement::Label (format!("An error ocurred while running the installer. Please contact Workbench LLC with this error message: {err:#?}")));
 	app_locked.gui_elements.push(GuiElement::BottomElements (vec!(
-		GuiElement::Button {text: String::from("Exit"), just_clicked: false},
+		GuiElement::Button {text: String::from("Exit"), was_clicked: false},
 	)));
 	drop(app_locked);
 	loop {
 		thread::sleep(Duration::from_millis(100));
 		let mut app_locked = app.lock().map_err_string()?;
 		let GuiElement::BottomElements (bottom_elements) = &mut app_locked.gui_elements[3] else {return unsynced_err();};
-		let GuiElement::Button {just_clicked,  ..} = &mut bottom_elements[0] else {return unsynced_err();};
+		let GuiElement::Button {was_clicked: just_clicked,  ..} = &mut bottom_elements[0] else {return unsynced_err();};
 		let just_clicked = mem::take(just_clicked);
 		if just_clicked {
 			app_locked.should_close = true;
@@ -52,7 +52,7 @@ pub fn try_run(app: Arc<Mutex<App>>) -> Result<()> {
 		GuiElement::RadioButton {selected: select_action_rc.clone(), value: 0, text: String::from("Install")},
 		GuiElement::RadioButton {selected: select_action_rc.clone(), value: 1, text: String::from("Uninstall")},
 		GuiElement::BottomElements (vec!(
-			GuiElement::Button {text: String::from("Next"), just_clicked: false}
+			GuiElement::Button {text: String::from("Next"), was_clicked: false}
 		)),
 	);
 	let is_self_update = app_locked.is_self_update;
@@ -70,7 +70,7 @@ pub fn try_run(app: Arc<Mutex<App>>) -> Result<()> {
 		let mut app_locked = app.lock().map_err_string()?;
 		let next_button_clicked = {
 			let GuiElement::BottomElements (bottom_element) = &mut app_locked.gui_elements[5] else {return unsynced_err();};
-			let GuiElement::Button {just_clicked, ..} = &mut bottom_element[0] else {return unsynced_err();};
+			let GuiElement::Button {was_clicked: just_clicked, ..} = &mut bottom_element[0] else {return unsynced_err();};
 			mem::take(just_clicked)
 		};
 		if next_button_clicked {break;}

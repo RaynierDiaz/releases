@@ -1,7 +1,6 @@
 use crate::*;
 use std::{fs::File, path::Path};
 use anyhow::*;
-use walkdir::WalkDir;
 use zip::{write::FileOptions, ZipWriter};
 
 pub const EXTENSION_DIR: &str = "C:\\ProgramData\\WorkVault";
@@ -12,8 +11,7 @@ pub fn prepare_assets_and_installer(zip: &mut ZipWriter<File>, options: FileOpti
 	
 	fs::write(releases_dir.join("installer/src/settings/addin_name.txt"), "WorkVault")?;
 	fs::write(releases_dir.join("installer/src/settings/addin_id.txt"), "8110dcaa-2e2f-4696-a89f-cfbee4cc4c27")?;
-	fs::write(releases_dir.join("installer/src/settings/assets_url.txt"), "https://github.com/RaynierDiaz/WorkVault/releases/download/latest/Assets.zip")?;
-	fs::write(releases_dir.join("installer/src/settings/installer_url.txt"), "https://github.com/RaynierDiaz/WorkVault/releases/download/latest/Installer.zip")?;
+	fs::write(releases_dir.join("installer/src/settings/installer_url.txt"), "http://158.120.176.164:8080/Installers/WorkVault.exe")?;
 	fs::write(releases_dir.join("installer/src/settings/assembly_name.txt"), "WorkVault.dll")?;
 	fs::write(releases_dir.join("installer/src/settings/full_class_name.txt"), "WorkVault.RevitApp")?;
 	
@@ -32,17 +30,6 @@ pub fn prepare_assets_and_installer(zip: &mut ZipWriter<File>, options: FileOpti
 	let file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("settings.txt"))?;
 	zip.write_all(&file_contents)?;
 	
-	// assets
-	for entry in WalkDir::new(PathBuf::from(EXTENSION_DIR).join("asset")) {
-		let entry = entry?;
-		let entry = entry.path();
-		if entry.is_dir() {continue;}
-		let zip_path = PathBuf::from("Program").join(entry.strip_prefix(EXTENSION_DIR)?);
-		zip.start_file(zip_path.to_string_lossy(), options)?;
-		let file_contents = fs::read(entry)?;
-		zip.write_all(&file_contents)?;
-	}
-	
 	// helix dlls
 	zip.start_file("Program/HelixToolkit.dll", options)?;
 	let file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("WpfWindow/bin/release/net48/HelixToolkit.dll"))?;
@@ -59,6 +46,11 @@ pub fn prepare_assets_and_installer(zip: &mut ZipWriter<File>, options: FileOpti
 	// readme file
 	zip.start_file("Program/readme.txt", options)?;
 	let file_contents = fs::read(releases_dir.join("assets/Program/readme.txt"))?;
+	zip.write_all(&file_contents)?;
+	
+	// eula file
+	zip.start_file("Program/eula.txt", options)?;
+	let file_contents = fs::read(releases_dir.join("assets/Program/eula.txt"))?;
 	zip.write_all(&file_contents)?;
 	
 	Ok(())

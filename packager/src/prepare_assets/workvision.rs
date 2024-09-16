@@ -11,8 +11,7 @@ pub fn prepare_assets_and_installer(zip: &mut ZipWriter<File>, options: FileOpti
 	
 	fs::write(releases_dir.join("installer/src/settings/addin_name.txt"), "WorkVision")?;
 	fs::write(releases_dir.join("installer/src/settings/addin_id.txt"), "c03cf504-109a-4426-88e6-59dfa2d718ba")?;
-	fs::write(releases_dir.join("installer/src/settings/assets_url.txt"), "https://github.com/RaynierDiaz/WorkVision/releases/download/latest/Assets.zip")?;
-	fs::write(releases_dir.join("installer/src/settings/installer_url.txt"), "https://github.com/RaynierDiaz/WorkVision/releases/download/latest/Installer.zip")?;
+	fs::write(releases_dir.join("installer/src/settings/installer_url.txt"), "http://158.120.176.164:8080/Installers/WorkVision.exe")?;
 	fs::write(releases_dir.join("installer/src/settings/assembly_name.txt"), "")?;
 	fs::write(releases_dir.join("installer/src/settings/full_class_name.txt"), "")?;
 	
@@ -34,6 +33,11 @@ pub fn prepare_assets_and_installer(zip: &mut ZipWriter<File>, options: FileOpti
 	// readme file
 	zip.start_file("Program/readme.txt", options)?;
 	let file_contents = fs::read(releases_dir.join("assets/Program/readme.txt"))?;
+	zip.write_all(&file_contents)?;
+	
+	// eula file
+	zip.start_file("Program/eula.txt", options)?;
+	let file_contents = fs::read(releases_dir.join("assets/Program/eula.txt"))?;
 	zip.write_all(&file_contents)?;
 	
 	Ok(())
