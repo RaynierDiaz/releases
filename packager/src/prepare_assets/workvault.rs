@@ -25,6 +25,18 @@ pub fn prepare_assets_and_installer(zip: &mut ZipWriter<File>, options: FileOpti
 	let file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("WpfWindow/bin/release/net48/WpfWindow.exe"))?;
 	zip.write_all(&file_contents)?;
 	
+	// // resources folder
+	// let resources_path = PathBuf::from(EXTENSION_DIR).join("WpfWindow/bin/release/net48/Resources");
+	// for entry in WalkDir::new(&resources_path) {
+	// 	let std::result::Result::Ok(entry) = entry else {println!("Warning, failed to read file in net48/Resources: {entry:?}"); continue;};
+	// 	let path = entry.path();
+	// 	if path.is_dir() {continue;}
+	// 	let path_for_zip = path.strip_prefix(&resources_path).unwrap().to_string_lossy();
+	// 	zip.start_file(format!("Program/Resources/{path_for_zip}"), options)?;
+	// 	let file_contents = fs::read(path)?;
+	// 	zip.write_all(&file_contents)?;
+	// }
+	
 	// settings file
 	zip.start_file("Program/settings.txt", options)?;
 	let file_contents = fs::read(PathBuf::from(EXTENSION_DIR).join("settings.txt"))?;
